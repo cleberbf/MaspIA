@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parecer de Crédito</title>
+<style>
+:root{--c:#A3003D;--c2:#7d002f;--cl:#f9e6ed;--bg:#f6f1f3;--bd:#dccbd3;--tx:#2b2226;--mut:#7a6a71}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+header{position:sticky;top:0;z-index:20;background:var(--c);color:#fff;padding:10px 20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 2px 6px #0003}
+header h1{font-size:18px;margin:0;flex:1;min-width:180px}
+button{font:inherit;cursor:pointer;border-radius:6px;padding:7px 14px;border:1px solid transparent}
+header button{background:#fff1;color:#fff;border-color:#fff8}
+header button:hover{background:#fff3}
+header button.go{background:#fff;color:var(--c);font-weight:600}
+.pri{background:var(--c);color:#fff}.pri:hover{background:var(--c2)}
+.sec{background:#fff;color:var(--c);border-color:var(--c)}.sec:hover{background:var(--cl)}
+.del{background:none;color:#a33;border-color:#d9b3b3;padding:4px 10px;font-size:12px}
+main{max-width:1100px;margin:18px auto;padding:0 14px 60px}
+.card{background:#fff;border:1px solid var(--bd);border-radius:10px;margin-bottom:16px;overflow:hidden}
+.card>h2{margin:0;padding:10px 16px;background:var(--c);color:#fff;font-size:14px;letter-spacing:.5px;text-transform:uppercase}
+.body{padding:14px 16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px 14px;align-items:start}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld.wide{grid-column:1/-1}
+.fld>label{font-size:12px;font-weight:600;color:#5b4a52}
+.fld.chk{flex-direction:row;align-items:center;gap:8px;padding-top:6px}
+.fld.chk label{font-size:14px;font-weight:600;color:var(--tx)}
+input[type=text],select,textarea{font:inherit;width:100%;padding:7px 9px;border:1px solid var(--bd);border-radius:6px;background:#fff;color:var(--tx)}
+textarea{min-height:84px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid #a3003d55;border-color:var(--c)}
+input.auto,input[readonly]{background:#f3eef0;color:#3d2f35}
+input.bad{border-color:#d33;background:#fff3f3}
+.ib{position:relative}
+.ib[data-pre] input{padding-left:32px}
+.ib[data-pre]::before{content:attr(data-pre);position:absolute;left:9px;top:8px;color:var(--mut);font-size:13px}
+.ib[data-suf] input{padding-right:26px}
+.ib[data-suf]::after{content:attr(data-suf);position:absolute;right:9px;top:8px;color:var(--mut);font-size:13px}
+.opts{display:flex;gap:16px;flex-wrap:wrap;padding:5px 0}
+.opts label{font-weight:400;font-size:14px;color:var(--tx);display:flex;gap:5px;align-items:center}
+.hint{font-size:11px;color:var(--mut)}.hint.err{color:#c22}
+.list{grid-column:1/-1;border:1px dashed var(--bd);border-radius:8px;padding:10px 12px;background:#fcf9fa}
+.list>h3{margin:0 0 8px;font-size:13px;color:var(--c)}
+.row{border:1px solid var(--bd);background:#fff;border-radius:8px;padding:10px;margin-bottom:8px;position:relative}
+.row .grid{margin-bottom:8px}
+.row .list{margin-bottom:8px}
+.foot{font-weight:600;font-size:13px;margin:8px 0 0;color:var(--c2)}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin:6px 0 30px}
+#rep{display:none}
+#rep textarea{min-height:420px;font-family:Consolas,monospace;font-size:13px;line-height:1.45}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2b2226;color:#fff;padding:10px 18px;border-radius:8px;z-index:99;opacity:0;transition:.3s;pointer-events:none}
+.toast.on{opacity:1}
+.ov{position:fixed;inset:0;background:#0006;z-index:50;display:flex;align-items:center;justify-content:center;padding:14px}
+.modal{background:#fff;border-radius:10px;max-width:640px;width:100%;max-height:88vh;overflow:auto}
+.modal h2{margin:0;padding:12px 16px;background:var(--c);color:#fff;font-size:15px}
+.modal h2{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.modal h2 .x{background:none;border:0;color:#fff;font-size:22px;line-height:1;cursor:pointer;padding:0 4px;border-radius:4px}
+.modal h2 .x:hover{background:#ffffff33}
+.modal .in{padding:14px 16px}
+table{width:100%;border-collapse:collapse;margin:10px 0}
+td,th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd);font-size:13px}
+.note{font-size:12px;color:var(--mut);margin:0 0 14px}
+</style>
+</head>
+<body>
+<header>
+  <button type="button" onclick="location.href='index.html'" title="Voltar para a página inicial">← Voltar</button>
+  <h1 id="ttl">Parecer de Crédito</h1>
+  <button onclick="novo()">Novo</button>
+  <button onclick="salvar()">Salvar</button>
+  <button onclick="resgatar()">Resgatar</button>
+  <button onclick="gerentes()">Gerentes</button>
+  <button class="go" onclick="gerar()">Gerar relatório</button>
+</header>
+<main>
+  <p class="note">Os dados ficam salvos somente neste computador (neste navegador). Um rascunho é guardado automaticamente enquanto você preenche.</p>
+  <p class="note">Sugestões de Melhorias: <a href="mailto:cleberbf@bnb.gov.br">cleberbf@bnb.gov.br</a></p>
+
+  <form id="frm" onsubmit="return false"></form>
+  <div class="bar"><button class="pri" onclick="gerar()">Gerar relatório</button><button class="sec" onclick="salvar()">Salvar parecer</button></div>
+  <section class="card" id="rep"><h2>Relatório</h2><div class="body">
+    <textarea id="repTxt"></textarea>
+    <div class="bar" style="margin:10px 0 0"><button class="pri" onclick="copiar()">Copiar relatório</button><button class="sec" onclick="baixar()">Gerar no Bloco de Notas (.txt)</button><button class="sec" onclick="document.getElementById('rep').style.display='none'">Fechar</button></div>
+    <p class="note" style="margin-top:8px">O navegador não abre o Bloco de Notas diretamente: o botão baixa um arquivo .txt, que abre no Bloco de Notas com um duplo clique. Você pode editar o texto acima antes de copiar ou baixar.</p>
+  </div></section>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+const AG={"2":["ALAGOA GRANDE","ALAGOA GRANDE","PB"],"3":["MORRO DO CHAPEU","MORRO DO CHAPEU","BA"],"4":["ANGICOS","ANGICOS","RN"],"5":["ARACAJU CENTRO","ARACAJU","SE"],"6":["ARAPIRACA","ARAPIRACA","AL"],"7":["BATALHA","BATALHA","AL"],"8":["BEZERROS","BEZERROS","PE"],"9":["CAMPINA GRANDE","CAMPINA GRANDE","PB"],"10":["CAMPOS SALES","CAMPOS SALES","CE"],"11":["CARIRA","CARIRA","SE"],"12":["CATOLE DO ROCHA","CATOLE DO ROCHA","PB"],"13":["CICERO DANTAS","CICERO DANTAS","BA"],"14":["FEIRA DE SANTANA","FEIRA DE SANTANA","BA"],"15":["FLORESTA","FLORESTA","PE"],"16":["FORTALEZA CENTRO","FORTALEZA","CE"],"17":["GARANHUNS","GARANHUNS","PE"],"18":["GARARU","GARARU","SE"],"19":["GUANAMBI","GUANAMBI","BA"],"20":["GUARABIRA","GUARABIRA","PB"],"21":["IGUATU","IGUATU","CE"],"22":["IRECE","IRECE","BA"],"23":["ITAPORANGA","ITAPORANGA","PB"],"24":["JAGUARIBE","JAGUARIBE","CE"],"25":["JANUARIA","JANUARIA","MG"],"26":["JARDIM DO SERIDO","JARDIM DO SERIDO","RN"],"27":["JEQUIE","JEQUIE","BA"],"28":["JOAO PESSOA CENTRO","JOAO PESSOA","PB"],"29":["JUAZEIRO DO NORTE","JUAZEIRO DO NORTE","CE"],"30":["LIMOEIRO DO NORTE","LIMOEIRO DO NORTE","CE"],"31":["MACEIO CENTRO","MACEIO","AL"],"32":["MATA GRANDE","MATA GRANDE","AL"],"33":["MOSSORO","MOSSORO","RN"],"34":["MONTES CLAROS","MONTES CLAROS","MG"],"35":["NATAL TIROL","NATAL","RN"],"36":["NOVA RUSSAS","NOVA RUSSAS","CE"],"37":["OEIRAS","OEIRAS","PI"],"38":["PARNAIBA","PARNAIBA","PI"],"39":["PAU DOS FERROS","PAU DOS FERROS","RN"],"40":["PESQUEIRA","PESQUEIRA","PE"],"41":["PETROLINA","PETROLINA","PE"],"42":["PORTEIRINHA","PORTEIRINHA","MG"],"43":["QUIXERAMOBIM","QUIXERAMOBIM","CE"],"44":["RECIFE CENTRO","RECIFE","PE"],"45":["SALGUEIRO","SALGUEIRO","PE"],"46":["SALVADOR COMERCIO","SALVADOR","BA"],"47":["SANTA CRUZ","SANTA CRUZ","RN"],"48":["SAO BENEDITO","SAO BENEDITO","CE"],"49":["SAO RAIMUNDO NONATO","SAO RAIMUNDO NONATO","PI"],"50":["SERTANIA","SERTANIA","PE"],"51":["SIMAO DIAS","SIMAO DIAS","SE"],"52":["SOBRAL","SOBRAL","CE"],"53":["SOUSA","SOUSA","PB"],"54":["SURUBIM","SURUBIM","PE"],"55":["TAUA","TAUA","CE"],"56":["TERESINA CENTRO","TERESINA","PI"],"57":["VALENCA DO PIAUI","VALENCA DO PIAUI","PI"],"58":["ITABUNA","ITABUNA","BA"],"59":["SAO LUIS AREINHA","SAO LUIS","MA"],"60":["SALINAS","SALINAS","MG"],"61":["SANTO ANTONIO","SANTO ANTONIO","RN"],"62":["CANINDE","CANINDE","CE"],"63":["OURICURI","OURICURI","PE"],"66":["PENEDO","PENEDO","AL"],"67":["PATOS","PATOS","PB"],"68":["FLORIANO","FLORIANO","PI"],"69":["PROPRIA","PROPRIA","SE"],"70":["BRASILIA DE MINAS","BRASILIA DE MINAS","MG"],"72":["LAVRAS DA MANGABEIRA","LAVRAS DA MANGABEIRA","CE"],"73":["VITORIA DA CONQUISTA","VITORIA DA CONQUISTA","BA"],"74":["ITAMARAJU","ITAMARAJU","BA"],"76":["RECIFE AGAMENON MAGALHAES","RECIFE","PE"],"77":["PIRAPORA","PIRAPORA","MG"],"78":["NOSSA SENHORA DAS DORES","NOSSA SENHORA DAS DORES","SE"],"80":["PALMEIRA DOS INDIOS","PALMEIRA DOS INDIOS","AL"],"81":["IMPERATRIZ","IMPERATRIZ","MA"],"82":["ITAPETINGA","ITAPETINGA","BA"],"83":["ALAGOINHAS","ALAGOINHAS","BA"],"84":["ITABERABA","ITABERABA","BA"],"85":["MONTE AZUL","MONTE AZUL","MG"],"86":["PICOS","PICOS","PI"],"87":["MACAU","MACAU","RN"],"88":["BATURITE","BATURITE","CE"],"89":["CRATEUS","CRATEUS","CE"],"90":["SIMOES FILHO","SIMOES FILHO","BA"],"91":["CAJAZEIRAS","CAJAZEIRAS","PB"],"92":["BARREIRAS","BARREIRAS","BA"],"93":["CAXIAS","CAXIAS","MA"],"95":["CORRENTE","CORRENTE","PI"],"96":["CAMPO MAIOR","CAMPO MAIOR","PI"],"97":["SOLANEA","SOLANEA","PB"],"98":["TOBIAS BARRETO","TOBIAS BARRETO","SE"],"99":["CARUARU","CARUARU","PE"],"100":["CURRAIS NOVOS","CURRAIS NOVOS","RN"],"101":["CAICO","CAICO","RN"],"102":["PRESIDENTE DUTRA","PRESIDENTE DUTRA","MA"],"103":["SANTA INES","SANTA INES","MA"],"104":["SENHOR DO BONFIM","SENHOR DO BONFIM","BA"],"105":["GRANJA","GRANJA","CE"],"106":["BACABAL","BACABAL","MA"],"107":["BARRA DO CORDA","BARRA DO CORDA","MA"],"108":["CHAPADINHA","CHAPADINHA","MA"],"109":["MONTALVANIA","MONTALVANIA","MG"],"110":["UNIAO DOS PALMARES","UNIAO DOS PALMARES","AL"],"111":["SERRA TALHADA","SERRA TALHADA","PE"],"112":["APODI","APODI","RN"],"113":["MOMBACA","MOMBACA","CE"],"114":["BREJO SANTO","BREJO SANTO","CE"],"115":["ASSU","ASSU","RN"],"116":["ITABAIANA","ITABAIANA","SE"],"117":["MUNDO NOVO","MUNDO NOVO","BA"],"118":["VITORIA DE SANTO ANTAO","VITORIA DE SANTO ANTAO","PE"],"119":["ITAPIPOCA","ITAPIPOCA","CE"],"120":["PAULISTA","PAULISTA","PE"],"121":["SANTA MARIA DA VITORIA","SANTA MARIA DA VITORIA","BA"],"122":["GOIANA","GOIANA","PE"],"123":["AGUA BRANCA","AGUA BRANCA","PI"],"124":["CRATO","CRATO","CE"],"125":["PIRIPIRI","PIRIPIRI","PI"],"126":["SANTO ANTONIO DE JESUS","SANTO ANTONIO DE JESUS","BA"],"127":["CODO","CODO","MA"],"128":["PEDREIRAS","PEDREIRAS","MA"],"129":["ESTANCIA","ESTANCIA","SE"],"130":["TIMBAUBA","TIMBAUBA","PE"],"132":["JACOBINA","JACOBINA","BA"],"133":["TIANGUA","TIANGUA","CE"],"134":["NOSSA SENHORA DA GLORIA","NOSSA SENHORA DA GLORIA","SE"],"135":["QUIXADA","QUIXADA","CE"],"137":["JUAZEIRO","JUAZEIRO","BA"],"138":["BOM JESUS","BOM JESUS","PI"],"139":["BALSAS","BALSAS","MA"],"140":["JANAUBA","JANAUBA","MG"],"141":["SUME","SUME","PB"],"142":["CAMACARI","CAMACARI","BA"],"143":["MEDEIROS NETO","MEDEIROS NETO","BA"],"144":["CORRENTINA","CORRENTINA","BA"],"145":["ARACATI","ARACATI","CE"],"146":["LAGARTO","LAGARTO","SE"],"147":["ZE DOCA","ZE DOCA","MA"],"150":["ARARIPINA","ARARIPINA","PE"],"151":["ANDARAI","ANDARAI","BA"],"152":["FORTALEZA ALDEOTA","FORTALEZA","CE"],"153":["BOA VIAGEM","BOA VIAGEM","CE"],"154":["BOM JESUS DA LAPA","BOM JESUS DA LAPA","BA"],"155":["BOQUIM","BOQUIM","SE"],"157":["CAMACAN","CAMACAN","BA"],"159":["ESPERANTINA","ESPERANTINA","PI"],"160":["ILHEUS","ILHEUS","BA"],"161":["LARANJEIRAS","LARANJEIRAS","SE"],"163":["PAULO AFONSO","PAULO AFONSO","BA"],"164":["POMBAL","POMBAL","PB"],"165":["SANTANA DO IPANEMA","SANTANA DO IPANEMA","AL"],"166":["ACAILANDIA","ACAILANDIA","MA"],"168":["IPIAU","IPIAU","BA"],"171":["NEOPOLIS","NEOPOLIS","SE"],"172":["SAPE","SAPE","PB"],"173":["TEIXEIRA DE FREITAS","TEIXEIRA DE FREITAS","BA"],"177":["EUNAPOLIS","EUNAPOLIS","BA"],"178":["PAULISTANA","PAULISTANA","PI"],"180":["ARACAJU SIQUEIRA CAMPOS","ARACAJU","SE"],"181":["SALVADOR BARRA","SALVADOR","BA"],"182":["FORTALEZA BEZERRA DE MENEZES","FORTALEZA","CE"],"183":["NATAL PRUDENTE DE MORAIS","NATAL","RN"],"185":["JOAO PESSOA EPITACIO PESSOA","JOAO PESSOA","PB"],"186":["MARACANAU","MARACANAU","CE"],"187":["SALVADOR COSTA AZUL","SALVADOR","BA"],"189":["FORTALEZA MONTESE","FORTALEZA","CE"],"190":["MACEIO FAROL","MACEIO","AL"],"192":["RECIFE DOMINGOS FERREIRA","RECIFE","PE"],"193":["SAO LUIS CALHAU","SAO LUIS","MA"],"194":["TERESINA DOM SEVERINO","TERESINA","PI"],"195":["PINHEIRO","PINHEIRO","MA"],"196":["LUIS EDUARDO MAGALHAES","LUIS EDUARDO MAGALHAES","BA"],"197":["CAPELINHA","CAPELINHA","MG"],"198":["COLATINA","COLATINA","ES"],"199":["TEOFILO OTONI","TEOFILO OTONI","MG"],"200":["LINHARES","LINHARES","ES"],"211":["URUCUI","URUCUI","PI"],"212":["VALENCA","VALENCA","BA"],"213":["CONCEICAO DO COITE","CONCEICAO DO COITE","BA"],"214":["SAO JOAO DO PIAUI","SAO JOAO DO PIAUI","PI"],"215":["PARNAMIRIM","PARNAMIRIM","RN"],"216":["PORTO FRANCO","PORTO FRANCO","MA"],"217":["ALMENARA","ALMENARA","MG"],"218":["CAUCAIA","CAUCAIA","CE"],"219":["NOVA VENECIA","NOVA VENÉCIA","ES"],"220":["SAO MATEUS","SÃO MATEUS","ES"],"221":["CASCAVEL","CASCAVEL","CE"],"222":["SAO MIGUEL DOS CAMPOS","SÃO MIGUEL DOS CAMPOS","AL"],"224":["TIMON","TIMON","MA"],"225":["JOAO PESSOA CIDADE UNIVERSITARIA","JOAO PESSOA","PB"],"226":["SANTA RITA","SANTA RITA","PB"],"227":["PACAJUS","PACAJUS","CE"],"228":["FORTALEZA WASHINGTON SOARES","FORTALEZA","CE"],"229":["MACEIO ANTARES","MACEIO","AL"],"230":["ACOPIARA","ACOPIARA","CE"],"231":["BARBALHA","BARBALHA","CE"],"232":["JABOATAO DOS GUARARAPES","JABOATÃO DOS GUARARAPES","PE"],"233":["CAMARAGIBE","CAMARAGIBE","PE"],"235":["ARACAJU JARDINS","ARACAJU","SE"],"236":["CEARA-MIRIM","CEARA-MIRIM","RN"],"237":["OLINDA","OLINDA","PE"],"238":["PALMARES","PALMARES","PE"],"240":["SAO LUIS SAO CRISTOVAO","SAO LUIS","MA"],"241":["GRAJAU","GRAJAU","MA"],"242":["SANTA LUZIA","SANTA LUZIA","MA"],"243":["SEABRA","SEABRA","BA"],"244":["CRUZ DAS ALMAS","CRUZ DAS ALMAS","BA"],"245":["CARPINA","CARPINA","PE"],"246":["TERESINA DIRCEU","TERESINA","PI"],"247":["BRUMADO","BRUMADO","BA"],"248":["NATAL ROBERTO FREIRE","NATAL","RN"],"249":["SALVADOR TANCREDO NEVES","SALVADOR","BA"],"251":["PORTO SEGURO","PORTO SEGURO","BA"],"253":["SAO JOSE DE RIBAMAR","SÃO JOSÉ DE RIBAMAR","MA"],"254":["ARINOS","ARINOS","MG"],"255":["DIAMANTINA","DIAMANTINA","MG"],"257":["NOSSA SENHORA DO SOCORRO","NOSSA SENHORA DO SOCORRO","SE"],"258":["MACAIBA","MACAÍBA","RN"],"259":["ARCOVERDE","ARCOVERDE","PE"],"260":["SAO FRANCISCO","SÃO FRANCISCO","MG"],"261":["IPIRA","IPIRA","BA"],"262":["SANTO AMARO","SANTO AMARO","BA"],"264":["ACARAU","ACARAU","CE"],"265":["MARANGUAPE","MARANGUAPE","CE"],"266":["SAO GONCALO DO AMARANTE","SÃO GONÇALO DO AMARANTE","RN"],"267":["HORIZONTE","HORIZONTE","CE"],"268":["VICOSA DO CEARA","VIÇOSA DO CEARA","CE"],"269":["UMARIZAL","UMARIZAL","RN"],"271":["SAO LOURENCO DA MATA","SÃO LOURENÇO DA MATA","PE"],"272":["MORENO","MORENO","PE"],"273":["SANTA CRUZ DO CAPIBARIBE","SANTA CRUZ DO CAPIBARIBE","PE"],"274":["RECIFE CASA FORTE","RECIFE","PE"],"275":["SAO BENTO DO UNA","SÃO BENTO DO UNA","PE"],"276":["GRAVATA","GRAVATA","PE"],"277":["TUTOIA","TUTOIA","MA"],"278":["PACO DO LUMIAR","PAÇO DO LUMIAR","MA"],"279":["RIO LARGO","RIO LARGO","AL"],"280":["MARAGOGI","MARAGOGI","AL"],"281":["DELMIRO GOUVEIA","DELMIRO GOUVEIA","AL"],"282":["CORURIPE","CORURIPE","AL"],"283":["IBOTIRAMA","IBOTIRAMA","BA"],"284":["JAGUAQUARA","JAGUAQUARA","BA"],"285":["CAMPO FORMOSO","CAMPO FORMOSO","BA"],"286":["CASA NOVA","CASA NOVA","BA"],"287":["XIQUE-XIQUE","XIQUE-XIQUE","BA"],"288":["MONTE SANTO","MONTE SANTO","BA"],"289":["TUCANO","TUCANO","BA"],"290":["COLINAS","COLINAS","MA"],"291":["GOVERNADOR NUNES FREIRE","GOVERNADOR NUNES FREIRE","MA"],"292":["SANTA QUITERIA","SANTA QUITÉRIA","CE"],"293":["BAYEUX","BAYUEX","PB"],"295":["BARREIRINHAS","BARREIRINHAS","MA"],"296":["VIANA","VIANA","MA"],"298":["ITAPAGE","ITAPAGÉ","CE"],"300":["FORTALEZA PASSARE","FORTALEZA","CE"],"301":["JOAO CAMARA","JOÃO CÂMARA","RN"],"302":["SERRINHA","SERRINHA","BA"],"303":["BOM CONSELHO","BOM CONSELHO","PE"],"304":["IGARASSU","IGARASSU","PE"],"305":["RUSSAS","RUSSAS","CE"],"306":["IPOJUCA","IPOJUCA","PE"],"307":["LIMOEIRO","LIMOEIRO","PE"],"308":["BELO JARDIM","BELO JARDIM","PE"],"309":["ESCADA","ESCADA","PE"],"310":["BARRA DA ESTIVA","BARRA DA ESTIVA","BA"],"311":["SAO JOAO DOS PATOS","SÃO JOÃO DOS PATOS","MA"],"312":["ITAPECURU MIRIM","ITAPECURU MIRIM","MA"],"313":["EUSEBIO","EUSÉBIO","CE"],"316":["PAUDALHO","PAUDALHO","PE"],"317":["AQUIRAZ","AQUIRAZ","CE"],"318":["FORTALEZA MARAPONGA","FORTALEZA","CE"],"319":["CABO DE SANTO AGOSTINHO","CABO DE SANTO AGOSTINHO","PE"],"320":["ABREU E LIMA","ABREU E LIMA","PE"],"321":["EUCLIDES DA CUNHA","EUCLIDES DA CUNHA","BA"],"322":["LAURO DE FREITAS","LAURO DE FREITAS","BA"],"323":["DIAS D'AVILA","DIAS D'AVILA","BA"],"324":["ARACI","ARACI","BA"],"325":["CATU","CATU","BA"],"326":["CANDEIAS","CANDEIAS","BA"],"327":["CABEDELO","CABEDELO","PB"],"328":["PICUI","PICUI","PB"],"329":["GOIANINHA","GOIANINHA","RN"],"330":["UNIAO","UNIÃO","PI"],"332":["NANUQUE","NANUQUE","MG"],"333":["BOCAIUVA","BOCAIUVA","MG"],"334":["ARACUAI","ARAÇUAÍ","MG"],"335":["JAIBA","JAÍBA","MG"],"336":["OLHO D'AGUA DAS FLORES","OLHO D'ÁGUA DAS FLORES-AL","AL"],"342":["PIRACURUCA","PIRACURUCA","PI"],"345":["PINHEIROS","PINHEIROS-ES","ES"],"350":["MONTEIRO","MONTEIRO","PB"],"355":["VICOSA","VIÇOSA-AL","AL"],"356":["GOVERNADOR VALADARES","GOVERNADOR VALADARES","MG"],"357":["AIMORES","AIMORES","MG"],"358":["MANTENA","MANTENA","MG"],"359":["INHAPIM","INHAPIM","MG"],"360":["GUANHAES","GUANHAES","MG"]};
+const $=(s,e=document)=>e.querySelector(s);
+function el(t,a,...c){const e=document.createElement(t);for(const k in a||{}){const v=a[k];if(k.startsWith('on'))e[k]=v;else if(k==='class')e.className=v;else if(v!==false&&v!=null)e.setAttribute(k,v)}c.flat().forEach(x=>e.append(x));return e}
+const LS={get(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}};
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+
+/* ---------- utilidades ---------- */
+const digits=s=>String(s==null?'':s).replace(/\D/g,'');
+const num=s=>{if(s==null||s==='')return 0;return parseFloat(String(s).replace(/\./g,'').replace(',','.'))||0};
+const fmt=n=>(Math.round(n*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function maskNum(s,max){let d=digits(s).replace(/^0+(?=\d)/,'').slice(0,max);if(!d)return'';d=d.padStart(3,'0');const i=String(parseInt(d.slice(0,-2),10)).replace(/\B(?=(\d{3})+(?!\d))/g,'.');return i+','+d.slice(-2)}
+const maskDate=s=>{const d=digits(s).slice(0,8);let r=d.slice(0,2);if(d.length>2)r+='/'+d.slice(2,4);if(d.length>4)r+='/'+d.slice(4);return r};
+const maskMonth=s=>{const d=digits(s).slice(0,6);let r=d.slice(0,2);if(d.length>2)r+='/'+d.slice(2);return r};
+function maskDoc(s){const d=digits(s).slice(0,14);if(d.length<=11){let r=d.slice(0,3);if(d.length>3)r+='.'+d.slice(3,6);if(d.length>6)r+='.'+d.slice(6,9);if(d.length>9)r+='-'+d.slice(9);return r}return maskCnpj(d)}
+function maskCnpj(s){const d=digits(s).slice(0,14);let r=d.slice(0,2);if(d.length>2)r+='.'+d.slice(2,5);if(d.length>5)r+='.'+d.slice(5,8);if(d.length>8)r+='/'+d.slice(8,12);if(d.length>12)r+='-'+d.slice(12);return r}
+function cnpjOk(c){c=digits(c);if(c.length!==14||/^(\d)\1+$/.test(c))return false;const f=n=>{let s=0,p=n-7;for(let i=0;i<n;i++){s+=c[i]*p--;if(p<2)p=9}const r=s%11;return r<2?0:11-r};return f(12)==c[12]&&f(13)==c[13]}
+function dateOk(v,t){if(!v)return true;if(t==='date'){const m=v.match(/^(\d\d)\/(\d\d)\/(\d{4})$/);if(!m)return false;const d=new Date(+m[3],m[2]-1,+m[1]);return d.getFullYear()==m[3]&&d.getMonth()==m[2]-1&&d.getDate()==m[1]}if(t==='month'){const m=v.match(/^(\d\d)\/(\d{4})$/);return !!m&&m[1]>=1&&m[1]<=12}if(t==='year')return /^\d{4}$/.test(v)&&v>=1900&&v<=2100;return true}
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const tc=s=>String(s||'').toLowerCase().replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toUpperCase()).replace(/\s(De|Da|Do|Das|Dos|E)(?=\s)/g,x=>x.toLowerCase());
+const joinE=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' e '+a[a.length-1];
+const today=()=>new Date().toLocaleDateString('pt-BR');
+
+/* ---------- constantes ---------- */
+const FIN=['Investimento','FNE Giro','Cartão BNB Contratação de Capital de Giro','Cartão BNB Contratação de Investimento','Cartão BNB Contratação de Capital de Giro e Investimento','Cartão BNB Alteração de Capital de Giro','Cartão BNB Alteração de Investimento','Cartão BNB Alteração de Capital de Giro e Investimento','MPE Capital de Giro','Giro Fampe','Giro FGI PEAC','Giro Pronampe','Cheque MPE Especial','Cheque Empresa Conterrâneo','LCGA','LCGH'];
+const GI=['Cartão BNB Contratação de Investimento','Cartão BNB Alteração de Investimento'];
+const GCI=['Cartão BNB Contratação de Capital de Giro e Investimento','Cartão BNB Alteração de Capital de Giro e Investimento'];
+const GCG=['Cartão BNB Contratação de Capital de Giro','Cartão BNB Alteração de Capital de Giro'];
+const ALT=['Cartão BNB Alteração de Capital de Giro','Cartão BNB Alteração de Investimento','Cartão BNB Alteração de Capital de Giro e Investimento'];
+const FONTE_FNE=['Investimento',...GI];
+const FONTE_REC=['MPE Capital de Giro','Giro Fampe','Giro FGI PEAC','Giro Pronampe','Cheque MPE Especial','Cheque Empresa Conterrâneo','LCGA','LCGH'];
+const FONTE_MIX=['FNE Giro',...GCG,...GCI];
+const GIRO_OBJ=['FNE Giro',...GCG,'MPE Capital de Giro','Giro Fampe','Giro FGI PEAC','Giro Pronampe','Cheque MPE Especial','Cheque Empresa Conterrâneo'];
+const GIRO_SUB=['FNE Giro',...GCG,'MPE Capital de Giro','Giro Fampe','Giro FGI PEAC','Giro Pronampe','Cheque MPE Especial'];
+const SUB_ALL=['Cheque','Giro Parcelado','Investimento FCA','Investimento FCP','Giro Parcelado e Investimento FCP'];
+const PORTES=['Microempresa','Pequena','Pequeno Médio','Médio I','Médio II','Grande'];
+const PORTE_BAL=['Pequeno Médio','Médio I','Médio II','Grande'];
+const APLIC=['Aquisição Isolada de Máquina(s)','Aquisição Isolada de Equipamento(s)','Aquisição Isolada de Veículo(s)','Aquisição Isolada de Móveis','Aquisição Isolada de Móveis e Utensílios','Investimentos Fixos','Investimento Misto (Fixo + Capital De Giro)','Investimentos Semifixos','Financiamento Integrado FNE Sol','Aquisiçao de Terreno'];
+const CARTAO=[...GCG,...GI,...GCI];
+const APLIC_ISOL=['Aquisição Isolada de Máquina(s)','Aquisição Isolada de Equipamento(s)','Aquisição Isolada de Veículo(s)','Aquisição Isolada de Móveis','Aquisição Isolada de Móveis e Utensílios'];
+const APLIC_INV=['Investimentos Fixos','Investimento Misto (Fixo + Capital De Giro)','Investimentos Semifixos','Financiamento Integrado FNE Sol'];
+const OBJ=['Implantação','Expansão','Relocalização','Manutenção','Modernização','Ampliação'];
+const PFNE=['3 - AGRIN','5 - INDUSTRIAL','221 - FNE VERDE-INDUSTRIAL','226 - RURAL','304 - FNE-COMERCIO','305 - FNE-SERVICOS','308 - FNE VERDE-COMERCIAL','309 - FNE VERDE/SERVICOS','440 - FNE-MPE-AGROINDUSTRIA','441 - FNE-MPE-INDUSTRIA','442 - FNE-MPE-TURISMO','443 - FNE-MPE-COMERCIO','444 - FNE-MPE-SERVICOS','619 - FNE VERDE-AGRIN','622 - FNE VERDE MPE AGROINDUSTRIA','623 - FNE VERDE MPE INDUSTRIA','624 - FNE VERDE MPE TURISMO','625 - FNE VERDE MPE COMERCIO','626 - FNE VERDE MPE SERVICOS','644 - FNE-SAUDE-INDUSTRIAL','645 - FNE-SAUDE-SERVICOS','646 - FNE-SAUDE-MPE-INDUSTRIA','647 - FNE-SAUDE-MPE-SERVICOS','648 - FNE-SAUDE-INOVACAO-INDUSTRIAL','649 - FNE-SAUDE-INOVACAO-SERVICOS','650 - FNE-SAUDE-INOVACAO-MPE-INDUSTRIA','651 - FNE-SAUDE-INOVACAO-MPE-SERVICO','652 - FNE INOVACAO AGRIN','664 - FNE FRANQUIA COMERCIO','665 - FNE FRANQUIA SERVICOS','666 - FNE MPE FRANQUIA COMERCIO','667 - FNE MPE FRANQUIA SERVICOS','988 - FNE INOVACAO VERDE AGRIN','989 - FNE INOVACAO VERDE INDUSTRIAL'];
+const PREC=['181 - CHEQUE ESPECIAL CONTERRANEO','386 - GIRO SIMPLES','387 - GIRO SIMPLES C/FUND.LIQ.','409 - CAPITAL DE GIRO INSUMOS','453 - MPE CAPITAL DE GIRO','536 - GIRO ESPECIAL','662 - GIRO SIMPLES FGI PEAC','663 - MPE CAP.GIRO FGI PEAC','685 - MPE CAP GIRO FAMPE-MICRO','686 - MPE CAP GIRO FAMPE-PEQ','703 - MPE CAPGIR FAMPE-MICRO-EMP_FEM','704 - MPE CAPGIR FAMPE-PEQ-EMP_FEM','935 - CHEQUE MPE ESPECIAL','971 - CHEQUE MPE ESPEC. C/FUNDO.LIQ','654 - PRONAMPE II','655 - PRONAMPE PERSE','657 - PRONAMPE II - PROF. LIBERAL'];
+
+/* ---------- estado ---------- */
+const newState=()=>({id:null,f:{dtParecer:today(),limPrazo:'20',fgiPct:'80,00',fgoPct:'100,00'},L:{},atv:[]});
+let S=newState();
+const REG={},LREG=[],LISTS=[];let UID=0;
+const LCGx=f=>f.finalidade==='LCGA'||f.finalidade==='LCGH';
+const notLCG=f=>!LCGx(f);
+const invActive=f=>f.finalidade==='Investimento'&&APLIC_INV.includes(f.aplic);
+const isFNE=f=>['FNE','FNE e Recin'].includes(f.fonte);
+const isREC=f=>['Recin','FNE e Recin'].includes(f.fonte);
+const gerList=tp=>{const l=LS.get('parecer_gerentes',[]).filter(g=>g.tipo===tp).map(g=>g.nome).sort((a,b)=>a.localeCompare(b,'pt-BR'));return l};
+const gerOpts=(tp,k)=>f=>{const l=gerList(tp);if(f[k]&&!l.includes(f[k]))l.push(f[k]);return l};
+const isCpf=r=>{const n=digits(r.doc).length;return n>0&&n<=11};
+const isCnpj=r=>digits(r.doc).length>11;
+
+/* ---------- campos ---------- */
+const $m=(k,l,x)=>({k,l,t:'money',...x});
+const $p=(k,l,x)=>({k,l,t:'pct',...x});
+const $d=(k,l,x)=>({k,l,t:'date',...x});
+const guar=(name,tit,nomeL,suf)=>({name,title:tit,add:'+ Adicionar '+tit.toLowerCase(),cols:[{k:'doc',l:tit+' CPF/CNPJ',t:'doc'},{k:'nome',l:nomeL,t:'text',max:100},$m('renda','Renda Mensal do '+suf,{show:isCpf}),$m('pat','Patrimônio do '+suf,{show:isCpf}),$m('cap','Patrimônio Líquido do '+suf,{show:isCnpj})]});
+const cominCols=(a,b)=>[{k:'prod',l:a,t:'text',max:50},$m('val',b)];
+const PAR=[['rPacote','Pacote de Tarifa'],['rPix','Chave Pix'],['rCartao','Recebíveis de Cartão'],['rCobr','Cobrança Bancária']];
+const PAR2=[['pApl','Aplicação Financeira'],['pPrest','Seguro Prestamista'],['pCamed','Seguro CAMED'],['pPrev','Previdência Privada'],['pVida','Seguro de Vida']];
+
+const SECS=[
+{id:'geral',t:'Dados Gerais',items:[
+ {k:'cod',l:'Código da Agência',t:'int',max:4},
+ {k:'agencia',l:'Agência',t:'text',auto:true},
+ {k:'gerAg',l:'Gerente da Agência',t:'select',opts:gerOpts('ag','gerAg')},
+ {k:'gerAgT',l:'Titular / Substituto',t:'select',opts:['Titular','Substituto']},
+ {k:'gerRel',l:'Gerente de Relacionamento',t:'select',opts:gerOpts('rel','gerRel')},
+ {k:'gerRelT',l:'Titular / Substituto',t:'select',opts:['Titular','Substituto']},
+ {t:'btn',l:'Cadastrar gerentes',fn:()=>gerentes()},
+ {k:'cnpj',l:'CNPJ do cliente',t:'cnpj',after:()=>{const b=el('button',{class:'sec',type:'button',onclick:()=>buscar()},'Buscar dados do CNPJ');const m=el('div',{class:'hint',id:'cnpjMsg'});return el('div',{},b,m)},on:f=>{if(digits(f.cnpj).length===14&&cnpjOk(f.cnpj))buscar()}},
+ {k:'nomeProp',l:'Nome do Proponente',t:'text',max:200,show:f=>digits(f.cnpj).length===14},
+ {k:'situacao',l:'Situação Cadastral do Cliente',t:'text',max:100,show:f=>digits(f.cnpj).length===14},
+ {k:'endereco',l:'Endereço do Cliente',t:'text',max:400,wide:true,show:f=>digits(f.cnpj).length===14},
+ {k:'finalidade',l:'Finalidade',t:'select',opts:FIN,wide:true}
+]},
+{id:'cad',t:'Dados Cadastrais',items:[
+ $d('dtCad','Data de Cadastro no Banco'),$d('dtInicio','Data de Início de Negócios com o Banco'),$d('dtConst','Data de Constituição'),
+ {k:'porte',l:'Porte da Empresa',t:'select',opts:PORTES},
+ $m('fat','Faturamento'),
+ {k:'fatProj',l:'Faturamento Projetado?',t:'radio',opts:['Sim','Não']},
+ {k:'dtBaseFat',l:'Data-Base do Faturamento',t:'month',show:f=>f.fatProj==='Não'},
+ {k:'anoBal',l:'Ano do Balanço',t:'year',show:f=>PORTE_BAL.includes(f.porte)},
+ $m('ativo','Ativo Total',{show:f=>PORTE_BAL.includes(f.porte)}),
+ $m('lucro','Lucro Líquido',{show:f=>PORTE_BAL.includes(f.porte)})
+]},
+{id:'scr',t:'SCR-Bacen',items:[$m('scrRisco','Risco Total no SCR-Bacen'),$m('scrLim','Limite no SCR-Bacen'),{k:'scrBase',l:'Data-Base SCR-Bacen',t:'month'}]},
+{id:'lcc',t:'LCC',show:notLCG,items:[$m('lccTotal','Limite Total do LCC'),$m('lccGiro','Limite de Capital de Giro'),$m('lccCheque','Limite de Cheque'),$m('lccFCA','Limite de Investimento FCA'),$m('lccFCP','Limite de Investimento FCP')]},
+{id:'reemb',t:'Valores Reembolsados',items:[$m('reemb','Valores Reembolsados'),$p('reembPct','Percentual de Reembolso em Relação ao Saldo Devedor')]},
+{id:'resp',t:'Responsabilidade Direta',items:[
+ $m('respGiro','Resp. em ser de Capital de Giro'),$m('respInv','Resp. em ser Investimento'),
+ $m('saldoG','Saldo Comin de Capital de Giro',{auto:true}),
+ {name:'cominG',title:'Itens do Saldo Comin de Capital de Giro',add:'+ Inserir item de giro',cols:cominCols('Produto de Giro','Valor do Comin de Giro'),footer:a=>a.length?'Total: R$ '+fmt(a.reduce((s,r)=>s+num(r.val),0)):''},
+ $m('saldoI','Saldo Comin de Investimento',{auto:true}),
+ {name:'cominI',title:'Itens do Saldo Comin de Investimento',add:'+ Inserir item de investimento',cols:cominCols('Produto de Investimento','Valor do Comin de Investimento'),footer:a=>a.length?'Total: R$ '+fmt(a.reduce((s,r)=>s+num(r.val),0)):''}
+]},
+{id:'fin',t:'Financiamento',show:notLCG,items:[
+ {k:'aplic',l:'Aplicação de Recursos',t:'select',opts:APLIC,wide:true,show:f=>f.finalidade==='Investimento'},
+ {k:'justSemCartao',l:'Justificativa de não utilização de Cartão BNB',t:'textarea',max:1000,wide:true,show:f=>f.finalidade==='Investimento'&&APLIC_ISOL.includes(f.aplic)},
+ {name:'inv',title:'Inversões',add:'+ Inserir inversão',show:invActive,
+  cols:[{k:'inv',l:'Inversão',t:'text',max:60},$m('valor','Valor da Inversão'),$m('fin','Recursos Financiados da Inversão'),$m('prop','Recursos Próprios da Inversão',{auto:true}),{k:'pf',l:'% Recursos Financiados',t:'text',auto:true},{k:'pp',l:'% Recursos Próprios',t:'text',auto:true}],
+  calc:r=>{const v=num(r.valor),fi=num(r.fin);r.prop=fmt(v-fi);r.pf=(v?fmt(fi/v*100):'0,00')+'%';r.pp=(v?fmt((v-fi)/v*100):'0,00')+'%'},
+  footer:a=>{const v=a.reduce((s,r)=>s+num(r.valor),0),fi=a.reduce((s,r)=>s+num(r.fin),0);return a.length?`Totais — Valor: R$ ${fmt(v)} | Financiado: R$ ${fmt(fi)} (${v?fmt(fi/v*100):'0,00'}%) | Próprios: R$ ${fmt(v-fi)} (${v?fmt((v-fi)/v*100):'0,00'}%)`:''}},
+ $m('valFin','Valor Financiado',{show:f=>!CARTAO.includes(f.finalidade)}),
+ $m('valProp','Valor de Recursos Próprios',{show:f=>f.finalidade==='Investimento'}),
+ $m('valTotal','Valor Total',{auto:true,show:f=>f.finalidade==='Investimento'}),
+ $m('limInvCartao','Limite de Investimento - Cartão BNB',{show:f=>[...GI,...GCI].includes(f.finalidade)}),
+ $m('limGiroCartao','Limite de Capital de Giro - Cartão BNB',{show:f=>[...GCG,...GCI].includes(f.finalidade)}),
+ $m('limTotCartao','Limite Total - Cartão BNB',{auto:true,show:f=>CARTAO.includes(f.finalidade)}),
+ {k:'fonte',l:'Fonte de Recursos',t:'select',force:true,opts:f=>FONTE_FNE.includes(f.finalidade)?['FNE']:FONTE_REC.includes(f.finalidade)?['Recin']:FONTE_MIX.includes(f.finalidade)?['FNE','FNE e Recin']:['FNE','Recin','FNE e Recin']},
+ {k:'progFne',l:'Programa FNE',t:'select',opts:PFNE,wide:true,show:isFNE},
+ {k:'progRec',l:'Programa Recin',t:'select',opts:PREC,wide:true,show:isREC},
+ {k:'prazo',l:'Prazo Total (em meses)',t:'int',max:3},
+ {k:'carencia',l:'Carência (em meses)',t:'int',max:3},
+ {k:'taxaFne',l:'Taxa FNE',t:'select',opts:['Pré-Fixada','Pós-Fixada'],show:isFNE},
+ $p('taxaM','Taxa Recin (a.m.)',{show:isREC}),
+ $p('taxaA','Taxa Recin (a.a.)',{show:isREC,auto:true}),
+ $p('tarifaPct','Tarifa (%)'),$m('tarifaVal','Valor da Tarifa'),
+ $m('tarifaAd','Tarifa de Aditivo',{show:f=>ALT.includes(f.finalidade)}),
+ {k:'limProp',l:'Limite da Proposta',t:'select',opts:['LCC','LRP','Extra-Limite']},
+ {k:'infoLRP',l:'Informações do Projeto (LRP)',t:'textarea',max:2000,wide:true,show:f=>f.limProp==='LRP'},
+ {k:'subLim',l:'Sub-Limite',t:'select',show:f=>f.limProp==='LCC',opts:f=>{const x=f.finalidade,r=[];if(x==='Investimento')r.push('Investimento FCA','Investimento FCP');if(GI.includes(x))r.push('Investimento FCP');if(GIRO_SUB.includes(x))r.push('Giro Parcelado');if(['Cheque MPE Especial','Cheque Empresa Conterrâneo'].includes(x))r.push('Cheque');if(GCI.includes(x))r.push('Giro Parcelado e Investimento FCP');return r.length?SUB_ALL.filter(s=>r.includes(s)):SUB_ALL}},
+ {k:'objetivo',l:'Objetivo',t:'select',opts:f=>GIRO_OBJ.includes(f.finalidade)?['Manutenção']:OBJ},
+ {k:'atividade',l:'Atividade Econômica',t:'select',wide:true,empty:'Informe o CNPJ para carregar as atividades',opts:f=>{const l=S.atv.slice();if(f.atividade&&!l.includes(f.atividade))l.push(f.atividade);return l}},
+ {k:'cidadeEst',l:'Cidade do Estabelecimento',t:'text',max:100},
+ {name:'propImovel',title:'Proprietário(s) do Imóvel',add:'+ Adicionar proprietário',cols:[{k:'doc',l:'CPF/CNPJ do Proprietário do Imóvel',t:'doc'},{k:'nome',l:'Nome do Proprietário do Imóvel',t:'text',max:150}]},
+ {k:'parent',l:'Há Grau de Parentesco?',t:'check'},{k:'parentJ',l:'Justificativa do Parentesco',t:'textarea',max:1000,wide:true,show:f=>f.parent},
+ {k:'laudo',l:'Há Laudo de Inaplicação?',t:'check'},{k:'laudoJ',l:'Justificativa da Inaplicação',t:'textarea',max:1000,wide:true,show:f=>f.laudo},
+ {k:'franq',l:'É Franquia?',t:'check'},{k:'franqNome',l:'Nome da Franquia',t:'text',max:100,show:f=>f.franq},
+ {k:'desemb',l:'Haverá Conta de Desembolso?',t:'check'},{k:'desembConta',l:'Conta de Desembolso',t:'text',max:10,show:f=>f.desemb}
+]},
+{id:'lcg',t:'Informações do LCGA/LCGH',show:LCGx,items:[
+ $m('limValor','Valor do Limite'),{k:'limPrazo',l:'Prazo do Limite (anos)',t:'int',max:2},
+ {name:'imov',title:'Imóveis',add:'+ Cadastrar imóvel',
+  cols:[{k:'desc',l:'Descrição do Imóvel',t:'textarea',max:500,wide:true},$m('valor','Valor Avaliado do Imóvel'),{k:'sicad',l:'Sicad do Imóvel',t:'int',max:10},{k:'matr',l:'Matrícula do Imóvel',t:'text',max:15},{k:'valoracao',l:'Valoração do Imóvel',t:'select',opts:['Avaliação Interna','Avaliação Externa','IPTU']},{k:'laudo',l:'Código do Laudo de Avaliação',t:'text',max:20,show:r=>r.valoracao==='Avaliação Interna'},$d('dtAval','Data de Avaliação',{show:r=>r.valoracao==='Avaliação Interna'})],
+  sub:{name:'interv',title:'Intervenientes do imóvel',add:'+ Adicionar interveniente',cols:[{k:'doc',l:'CPF/CNPJ do Interveniente',t:'doc'},{k:'nome',l:'Interveniente Alien./Hipot.',t:'text',max:100}]}},
+ {name:'benef',title:'Beneficiário(s) do Limite',add:'+ Adicionar beneficiário',cols:[{k:'doc',l:'CPF/CNPJ do Beneficiário',t:'doc'},{k:'nome',l:'Nome do Beneficiário',t:'text',max:100}]}
+]},
+{id:'gar',t:'Garantias',items:[
+ guar('aval','Aval','Nome do Avalista','Avalista'),guar('avalS','Aval Secundário','Nome do Avalista Secundário','Avalista Secundário'),
+ guar('fianca','Fiança','Nome do Fiador','Fiador'),guar('fiancaS','Fiança Secundária','Nome do Fiador Secundário','Fiador Secundário'),
+ {k:'alienMov',l:'Alienação Fiduciária de Bens Móveis',t:'check',wide:true},
+ {k:'cessApl',l:'Cessão Fiduciária de Aplicação Financeira (% Saldo Devedor)',t:'check',wide:true},
+ $p('cessAplPct','Percentual da Aplicação',{show:f=>f.cessApl}),{k:'cessAplConta',l:'Conta da Aplicação',t:'text',max:10,show:f=>f.cessApl},
+ {k:'cessRec',l:'Cessão Fiduciária de Recebíveis de Duplicatas (% Saldo Devedor)',t:'check',wide:true},
+ $p('cessRecPct','Percentual dos Recebíveis',{show:f=>f.cessRec}),{k:'cessRecConta',l:'Conta dos Recebíveis',t:'text',max:10,show:f=>f.cessRec},
+ {k:'fgi',l:'FGI PEAC',t:'check',wide:true},$p('fgiPct','Percentual da Garantia FGI',{show:f=>f.fgi}),
+ {k:'fampe',l:'Sebrae Fampe',t:'check',wide:true},
+ {k:'fampeMod',l:'Modalidade Fampe',t:'select',opts:['Tradicional','Mulher'],show:f=>f.fampe,on:f=>{f.fampePct=f.fampeMod==='Mulher'?'100,00':f.fampeMod==='Tradicional'?'80,00':f.fampePct;REG.fampePct.w._set(f.fampePct||'')}},
+ $p('fampePct','Percentual da Garantia Fampe',{show:f=>f.fampe}),
+ {k:'fgo',l:'FGO Pronampe',t:'check',wide:true},$p('fgoPct','Percentual da Garantia Pronampe',{show:f=>f.fgo}),
+ {k:'fiancaBanc',l:'Fiança Bancária',t:'check',wide:true},
+ {k:'np',l:'Nota Promissória',t:'check',wide:true},$p('npPct','Percentual da Nota Promissória',{show:f=>f.np}),
+ {k:'garLcg',l:'Garantia LCGA/LCGH',t:'select',opts:['LCGA','LCGH']},
+ {k:'garLcgNum',l:'Nº Proposta de Limite',t:'text',max:20,show:f=>f.garLcg},
+ {k:'garLcgDoc',l:'CPF/CNPJ do Limite',t:'doc',show:f=>f.garLcg},
+ {k:'garLcgNome',l:'Nome/Razão Social do Limite',t:'text',max:100,show:f=>f.garLcg}
+]},
+{id:'parc',t:'Parcerias',items:[
+ ...PAR.map(([k,l])=>({k,l,t:'radio',opts:['Existente','Nova'],clear:true})),
+ ...PAR2.map(([k,l])=>({k,l,t:'pair'}))
+]},
+{id:'ocor',t:'Ocorrências',items:[{k:'ocorr',l:'Ocorrências',t:'textarea',max:1000,wide:true}]},
+{id:'outras',t:'Outras Informações',items:[
+ {k:'grupo',l:'Pertence a Grupo Econômico?',t:'check'},{k:'grupoNome',l:'Código e Nome do Grupo',t:'text',max:60,show:f=>f.grupo},
+ {k:'outras',l:'Outras Considerações',t:'textarea',max:1000,wide:true},
+ {k:'alcada',l:'Alçada',t:'select',opts:['COMAG','Comitê Estadual','COMAC','Diretoria']},
+ $d('dtParecer','Data do Parecer')
+]}
+];
+SECS.forEach(s=>s.items.forEach(it=>{it.sec=s;if(it.sub)it.sub.sec=s}));
+
+/* ---------- construção de campos ---------- */
+function makeInput(fd,obj,onChange){
+  const t=fd.t||'text',id='i'+(++UID),emit=()=>onChange&&onChange(fd);
+  const w=el('div',{class:'fld'+(fd.wide?' wide':'')+(t==='check'?' chk':'')});
+  const lab=el('label',{for:id},fd.l);
+  if(t==='check'){
+    const i=el('input',{type:'checkbox',id});i.checked=!!obj[fd.k];i.onchange=()=>{obj[fd.k]=i.checked;emit()};
+    w.append(i,lab);w._set=v=>{i.checked=!!v};w._inp=i;return w}
+  if(t==='pair'){
+    const mk=(s,txt)=>{const i=el('input',{type:'checkbox'});i.checked=!!obj[fd.k+s];i.onchange=()=>{obj[fd.k+s]=i.checked;emit()};return el('label',{},i,txt)};
+    w.append(el('label',{},fd.l),el('div',{class:'opts'},mk('E','Existente'),mk('N','Nova')));return w}
+  if(t==='radio'){
+    const nm='r'+id,box=el('div',{class:'opts'});
+    fd.opts.forEach(o=>{const i=el('input',{type:'radio',name:nm,value:o});i.checked=obj[fd.k]===o;i.onchange=()=>{obj[fd.k]=o;emit()};box.append(el('label',{},i,o))});
+    if(fd.clear||true)box.append(el('a',{href:'#',style:'font-size:12px;color:#a3003d',onclick:e=>{e.preventDefault();obj[fd.k]='';box.querySelectorAll('input').forEach(x=>x.checked=false);emit()}},'limpar'));
+    w.append(el('label',{},fd.l),box);
+    w._set=v=>box.querySelectorAll('input').forEach(x=>x.checked=x.value===v);return w}
+  let inp;
+  if(t==='select'){
+    inp=el('select',{id});
+    w._opts=()=>{
+      const o=(typeof fd.opts==='function'?fd.opts(S.f):fd.opts)||[];const key=o.join('\u0001');
+      if(inp._k!==key){inp._k=key;inp.innerHTML='';inp.append(el('option',{value:''},o.length?'Selecione':(fd.empty||'—')));o.forEach(x=>inp.append(el('option',{value:x},x)))}
+      let cur=obj[fd.k]||'',ch=false;
+      if(cur&&!o.includes(cur))cur='';
+      if(!cur&&o.length===1&&fd.force)cur=o[0];
+      if(cur!==(obj[fd.k]||'')){obj[fd.k]=cur;ch=true}
+      inp.value=cur;inp.disabled=!!(fd.force&&o.length===1&&fd.k!=='fonte'?true:fd.force&&o.length===1);return ch};
+    inp.onchange=()=>{obj[fd.k]=inp.value;emit()};
+    w._set=v=>{inp.value=v||''};
+    w._opts();
+  }else if(t==='textarea'){
+    inp=el('textarea',{id,maxlength:fd.max});inp.value=obj[fd.k]||'';
+    inp.oninput=()=>{obj[fd.k]=inp.value;cnt.textContent=inp.value.length+'/'+fd.max;emit()};
+    var cnt=el('div',{class:'hint'},inp.value.length+'/'+fd.max);
+    w._set=v=>{inp.value=v||'';cnt.textContent=inp.value.length+'/'+fd.max};
+  }else{
+    inp=el('input',{type:'text',id,autocomplete:'off'});
+    const mask={money:s=>maskNum(s,15),pct:s=>maskNum(s,5),date:maskDate,month:maskMonth,year:s=>digits(s).slice(0,4),int:s=>digits(s).slice(0,fd.max||9),doc:maskDoc,cnpj:maskCnpj}[t];
+    if(fd.max&&t==='text')inp.maxLength=fd.max;
+    inp.placeholder={date:'dd/mm/aaaa',month:'mm/aaaa',year:'aaaa',cnpj:'00.000.000/0000-00',doc:'CPF ou CNPJ'}[t]||'';
+    inp.value=obj[fd.k]||'';
+    if(fd.auto){inp.readOnly=true;inp.classList.add('auto')}
+    inp.oninput=()=>{if(mask)inp.value=mask(inp.value);obj[fd.k]=inp.value;inp.classList.remove('bad');emit()};
+    if(['date','month','year'].includes(t))inp.onblur=()=>inp.classList.toggle('bad',!dateOk(inp.value,t));
+    if(t==='cnpj')inp.onblur=()=>inp.classList.toggle('bad',!!inp.value&&digits(inp.value).length===14&&!cnpjOk(inp.value));
+    w._set=v=>{inp.value=v||''};
+  }
+  w._inp=inp;
+  const wrap=el('div',{class:'ib'});
+  if(t==='money')wrap.dataset.pre='R$';if(t==='pct')wrap.dataset.suf='%';
+  wrap.append(inp);w.append(lab,wrap);
+  if(fd.after)w.append(fd.after());
+  return w;
+}
+
+function buildList(def,arr,onAny){
+  const box=el('div',{class:'list'}),rowsBox=el('div'),foot=el('div',{class:'foot'});
+  const rows=[];
+  box.append(el('h3',{},def.title),rowsBox,el('button',{class:'sec',type:'button',onclick:()=>{const r={};arr.push(r);draw(r);refresh();onAny()}},def.add||'+ Adicionar'),foot);
+  function refresh(){rows.forEach(re=>{re._calc();re._vis()});foot.textContent=def.footer?def.footer(arr):''}
+  function draw(row){
+    const re=el('div',{class:'row'}),grid=el('div',{class:'grid'}),ws={};
+    def.cols.forEach(fd=>{const w=makeInput(fd,row,()=>{refresh();onAny()});ws[fd.k]=w;grid.append(w)});
+    re.append(grid);
+    if(def.sub){if(!row[def.sub.name])row[def.sub.name]=[];re.append(buildList(def.sub,row[def.sub.name],onAny))}
+    re.append(el('button',{class:'del',type:'button',onclick:()=>{arr.splice(arr.indexOf(row),1);rows.splice(rows.indexOf(re),1);re.remove();refresh();onAny()}},'Remover'));
+    re._vis=()=>def.cols.forEach(fd=>{ws[fd.k].style.display=(fd.show&&!fd.show(row))?'none':''});
+    re._calc=()=>{if(def.calc){def.calc(row);def.cols.forEach(fd=>{if(fd.auto&&ws[fd.k]._set)ws[fd.k]._set(row[fd.k])})}};
+    rows.push(re);rowsBox.append(re);
+  }
+  arr.forEach(draw);box._refresh=refresh;refresh();return box;
+}
+
+/* ---------- montagem ---------- */
+function build(){
+  const frm=$('#frm');frm.innerHTML='';
+  for(const k in REG)delete REG[k];LREG.length=0;LISTS.length=0;
+  const onTop=fd=>{fd&&fd.on&&fd.on(S.f);onAny()};
+  SECS.forEach(s=>{
+    const grid=el('div',{class:'grid'});
+    s.items.forEach(it=>{
+      if(it.t==='btn'){grid.append(el('div',{class:'fld',style:'justify-content:end'},el('button',{class:'sec',type:'button',onclick:it.fn},it.l)));return}
+      if(it.cols){if(!S.L[it.name])S.L[it.name]=[];const b=buildList(it,S.L[it.name],onAny);grid.append(b);LISTS.push(b);LREG.push({def:it,box:b,sec:s});return}
+      const w=makeInput(it,S.f,onTop);grid.append(w);REG[it.k]={fd:it,w,sec:s};
+    });
+    frm.append(el('section',{class:'card',id:'s_'+s.id},el('h2',{},s.t),el('div',{class:'body'},grid)));
+  });
+  onAny(true);
+}
+const visible=(fd,sec)=>(!sec.show||sec.show(S.f))&&(!fd.show||fd.show(S.f));
+const vis=k=>REG[k]&&visible(REG[k].fd,REG[k].sec);
+function applyRules(){
+  for(let n=0;n<4;n++){let ch=false;for(const k in REG){const {fd,w}=REG[k];if(w._opts&&typeof fd.opts==='function')ch=w._opts()||ch}if(!ch)break}
+  for(const k in REG){const {fd,w,sec}=REG[k];w.style.display=visible(fd,sec)?'':'none'}
+  LREG.forEach(({def,box,sec})=>box.style.display=((!sec.show||sec.show(S.f))&&(!def.show||def.show(S.f)))?'':'none');
+  SECS.forEach(s=>$('#s_'+s.id).style.display=(s.show&&!s.show(S.f))?'none':'');
+}
+function put(k,v){S.f[k]=v;REG[k]&&REG[k].w._set(v)}
+function recalc(){
+  const f=S.f,a=AG[String(parseInt(f.cod,10))];
+  put('agencia',a?a[0]:'');
+  REG.cod.w._inp.classList.toggle('bad',!!f.cod&&!a);
+  put('saldoG',fmt(S.L.cominG.reduce((s,r)=>s+num(r.val),0)));
+  put('saldoI',fmt(S.L.cominI.reduce((s,r)=>s+num(r.val),0)));
+  const ia=invActive(f);
+  if(ia){put('valFin',fmt(S.L.inv.reduce((s,r)=>s+num(r.fin),0)));put('valProp',fmt(S.L.inv.reduce((s,r)=>s+num(r.valor)-num(r.fin),0)))}
+  ['valFin','valProp'].forEach(k=>{const i=REG[k].w._inp;i.readOnly=ia;i.classList.toggle('auto',ia)});
+  if(f.finalidade==='Investimento')put('valTotal',fmt(num(f.valFin)+num(f.valProp)));
+  put('limTotCartao',(vis('limInvCartao')&&f.limInvCartao)||(vis('limGiroCartao')&&f.limGiroCartao)?fmt((vis('limInvCartao')?num(f.limInvCartao):0)+(vis('limGiroCartao')?num(f.limGiroCartao):0)):'');
+  put('taxaA',f.taxaM?fmt((Math.pow(1+num(f.taxaM)/100,12)-1)*100):'');
+}
+let svT;
+function onAny(first){
+  applyRules();recalc();applyRules();
+  LISTS.forEach(b=>b._refresh());
+  const a=AG[String(parseInt(S.f.cod,10))];$('#ttl').textContent='Parecer de Crédito'+(a?' — Ag. '+S.f.cod+' '+a[0]:'');
+  if(first===true)return;
+  clearTimeout(svT);svT=setTimeout(()=>LS.set('parecer_rascunho',S),400);
+}
+
+/* ---------- Brasil API ---------- */
+function setMsg(m,err){const e=$('#cnpjMsg');if(e){e.textContent=m;e.className='hint'+(err?' err':'')}}
+async function buscar(){
+  const c=digits(S.f.cnpj);
+  if(c.length!==14||!cnpjOk(c)){setMsg('CNPJ inválido.',1);return}
+  setMsg('Consultando Brasil API...');
+  try{
+    const r=await fetch('https://brasilapi.com.br/api/cnpj/v1/'+c);
+    if(!r.ok)throw new Error(r.status===404?'CNPJ não encontrado.':'Falha na consulta ('+r.status+').');
+    const d=await r.json();
+    const tipo=(d.descricao_tipo_de_logradouro||'').trim(),lg=(d.logradouro||'').trim();
+    const log=tipo&&!lg.toUpperCase().startsWith(tipo.toUpperCase())?(tipo+' '+lg).trim():lg;
+    const cep=digits(d.cep).padStart(8,'0');
+    const end=[log,d.numero,d.complemento,d.bairro,d.cep?'CEP '+cep.slice(0,5)+'-'+cep.slice(5):'',[d.municipio,d.uf].filter(Boolean).join('/')].map(x=>String(x==null?'':x).trim()).filter(Boolean).join(', ');
+    const cn=x=>{x=digits(x).padStart(7,'0');return x.slice(0,4)+'-'+x[4]+'/'+x.slice(5)};
+    const atv=[];if(d.cnae_fiscal)atv.push(cn(d.cnae_fiscal)+' - '+d.cnae_fiscal_descricao);
+    (d.cnaes_secundarios||[]).forEach(x=>{if(x.codigo)atv.push(cn(x.codigo)+' - '+x.descricao)});
+    S.atv=atv;
+    put('nomeProp',d.razao_social||'');put('endereco',end);put('situacao',d.descricao_situacao_cadastral||'');
+    put('cidadeEst',[tc(d.municipio),d.uf].filter(Boolean).join('-'));
+    if(S.f.atividade&&!atv.includes(S.f.atividade))put('atividade','');
+    if(atv.length===1)put('atividade',atv[0]);
+    onAny();setMsg('Dados carregados da Brasil API.');
+  }catch(e){setMsg((e instanceof TypeError?'Sem conexão com a Brasil API.':e.message)+' Você pode preencher os campos manualmente.',1)}
+}
+
+/* ---------- salvar / resgatar ---------- */
+function novo(){if(confirm('Iniciar um novo parecer? O que não foi salvo será perdido.')){S=newState();LS.set('parecer_rascunho',S);build();window.scrollTo(0,0)}}
+function salvar(){
+  const docs=LS.get('parecer_docs',{});
+  if(!S.id)S.id='p'+Date.now();
+  const a=AG[String(parseInt(S.f.cod,10))];
+  docs[S.id]={id:S.id,label:[S.f.cod&&('Ag. '+S.f.cod+(a?' '+a[0]:'')),S.f.nomeProp||'(sem proponente)',S.f.finalidade].filter(Boolean).join(' · '),upd:new Date().toISOString(),data:S};
+  if(LS.set('parecer_docs',docs)){LS.set('parecer_rascunho',S);toast('Parecer salvo neste computador.')}else toast('Não foi possível salvar (armazenamento do navegador cheio ou bloqueado).');
+}
+function modal(title,content){
+  const ov=el('div',{class:'ov',onclick:e=>{if(e.target===ov)ov.remove()}},el('div',{class:'modal'},el('h2',{},title,el('button',{class:'x',type:'button',title:'Fechar','aria-label':'Fechar',onclick:()=>ov.remove()},'×')),el('div',{class:'in'},content)));
+  document.body.append(ov);return ov}
+function resgatar(){
+  const draw=()=>{
+    const docs=Object.values(LS.get('parecer_docs',{})).sort((a,b)=>b.upd.localeCompare(a.upd));
+    box.innerHTML='';
+    if(!docs.length){box.append(el('p',{},'Nenhum parecer salvo neste computador.'));return}
+    const tb=el('table');
+    docs.forEach(d=>tb.append(el('tr',{},el('td',{},d.label,el('div',{class:'hint'},'Salvo em '+new Date(d.upd).toLocaleString('pt-BR'))),el('td',{style:'white-space:nowrap'},
+      el('button',{class:'pri',onclick:()=>{S=Object.assign(newState(),d.data);S.id=d.id;build();ov.remove();window.scrollTo(0,0);toast('Parecer carregado.')}},'Abrir'),' ',
+      el('button',{class:'del',onclick:()=>{if(confirm('Excluir este parecer salvo?')){const all=LS.get('parecer_docs',{});delete all[d.id];LS.set('parecer_docs',all);draw()}}},'Excluir')))));
+    box.append(tb)};
+  const box=el('div');const ov=modal('Pareceres salvos',box);draw();
+}
+function gerentes(){
+  const box=el('div');
+  const nome=el('input',{type:'text',maxlength:100,placeholder:'Nome (até 100 caracteres)'}),tipo=el('select',{},el('option',{value:'ag'},'Gerente de Agência'),el('option',{value:'rel'},'Gerente de Relacionamento'));
+  const draw=()=>{
+    const l=LS.get('parecer_gerentes',[]);box.innerHTML='';
+    const tb=el('table',{},el('tr',{},el('th',{},'Nome'),el('th',{},'Função'),el('th')));
+    l.forEach((g,i)=>tb.append(el('tr',{},el('td',{},g.nome),el('td',{},g.tipo==='ag'?'Gerente de Agência':'Gerente de Relacionamento'),el('td',{},el('button',{class:'del',onclick:()=>{const x=LS.get('parecer_gerentes',[]);x.splice(i,1);LS.set('parecer_gerentes',x);draw();applyRules()}},'Remover')))));
+    box.append(l.length?tb:el('p',{},'Nenhum gerente cadastrado.'))};
+  const add=()=>{const n=nome.value.trim();if(!n)return;const l=LS.get('parecer_gerentes',[]);if(l.some(g=>g.nome.toLowerCase()===n.toLowerCase()&&g.tipo===tipo.value)){toast('Já cadastrado.');return}l.push({nome:n,tipo:tipo.value});LS.set('parecer_gerentes',l);nome.value='';draw();applyRules()};
+  nome.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();add()}};
+  modal('Cadastro de Gerentes',el('div',{},el('div',{class:'grid',style:'grid-template-columns:1fr 1fr auto'},nome,tipo,el('button',{class:'pri',onclick:add},'Adicionar')),box,el('p',{class:'hint'},'Os nomes ficam salvos somente neste computador.')));
+  draw();
+}
+
+/* ---------- relatório ---------- */
+function report(){
+  const f=S.f,L=S.L,P=[];
+  const g=k=>vis(k)?String(f[k]==null?'':f[k]):'';
+  const c=k=>vis(k)&&!!f[k];
+  const R=v=>'R$ '+v;
+  const lcg=LCGx(f);
+  const a=AG[String(parseInt(f.cod,10))];
+  // 1
+  let s='Proposta do cliente '+g('nomeProp')+', inscrito no CNPJ sob nº '+g('cnpj')+'.';
+  if(g('dtConst'))s+=' Empresa constituída em '+g('dtConst');
+  if(g('endereco'))s+=(g('dtConst')?' localizada a ':' Empresa localizada a ')+g('endereco');
+  if(g('dtConst')||g('endereco'))s+='.';
+  P.push(s);
+  // 2
+  if(g('dtCad')){s='A proponente é cliente do Banco desde '+g('dtCad');s+=g('dtInicio')?', tendo iniciado negócios com o Banco em '+g('dtInicio')+'.':' ainda sem negócios com o Banco.';P.push(s)}
+  // 3
+  s='';
+  if(g('fat')){s=f.fatProj==='Sim'?'Possui faturamento projetado de '+R(g('fat'))+'.':'Possui faturamento cadastrado no Banco no valor de '+R(g('fat'))+(g('dtBaseFat')?', tendo como data base '+g('dtBaseFat'):'')+'.'}
+  if(g('ativo')&&g('lucro'))s+=(s?' ':'')+'A empresa obteve no ano de '+g('anoBal')+' um lucro líquido de '+R(g('lucro'))+' e um ativo total de '+R(g('ativo'))+'.';
+  if(s)P.push(s);
+  // SCR
+  if(g('scrRisco')!==''){P.push(num(f.scrRisco)===0?'Cliente não tem Risco no SCR-Bacen referente a data-base de '+g('scrBase')+'.':'Cliente possui risco total no SCR-BACEN '+g('scrBase')+' no valor de '+R(g('scrRisco'))+(g('scrLim')?', dos quais '+R(g('scrLim'))+' refere-se a limite de crédito':'')+'.')}
+  // LCC
+  if(vis('lccTotal')&&g('lccTotal')){
+    const pt=[['lccCheque','Cheque'],['lccGiro','Capital de Giro'],['lccFCA','Investimento FCA'],['lccFCP','Investimento FCP']].filter(([k])=>num(f[k])>0).map(([k,n])=>'com sublimite de '+n+' de '+R(f[k]));
+    P.push('Cliente possui LCC total no valor de '+R(g('lccTotal'))+(pt.length?', '+joinE(pt):'')+'.')}
+  // reembolsado
+  if(g('reemb')!==''){P.push(num(f.reemb)>0?'Cliente já reembolsou ao Banco o valor de '+R(g('reemb'))+(g('reembPct')?', representando um percentual de reembolso de principal de '+g('reembPct')+'%':'')+'.':'Cliente sem valores reembolsados ao Banco.')}
+  // resp em ser
+  const cg=num(f.respGiro),iv=num(f.respInv);
+  if(g('respGiro')!==''||g('respInv')!==''){
+    if(cg>0&&iv>0)s='Cliente com responsabilidade em ser junto ao Banco no valor total de '+R(fmt(cg+iv))+', sendo '+R(fmt(cg))+' referente a Capital de Giro e '+R(fmt(iv))+' referente a Investimento.';
+    else if(cg>0)s='Cliente com responsabilidade em ser junto ao Banco no valor total de '+R(fmt(cg))+', sendo todo o valor referente a Capital de Giro.';
+    else if(iv>0)s='Cliente com responsabilidade em ser junto ao Banco no valor total de '+R(fmt(iv))+', sendo todo o valor referente a Investimento.';
+    else s='Cliente sem responsabilidade em ser junto ao Banco.';
+    const cm=(arr,tot,nm)=>{const it=arr.filter(r=>num(r.val)>0);if(!it.length)return'';return ' Há saldo comin de '+nm+' no valor de '+R(fmt(it.reduce((x,r)=>x+num(r.val),0)))+' referente a '+joinE(it.map(r=>(r.prod||'(produto não informado)')+' ('+R(r.val)+')'))+'.'};
+    s+=cm(L.cominG,f.saldoG,'Capital de Giro')+cm(L.cominI,f.saldoI,'Investimento');
+    P.push(s)}
+  else{const cm=[...L.cominG,...L.cominI];if(cm.length){/* sem resp. informado */}}
+  // finalidade
+  if(f.finalidade){P.push('A presente proposta destina-se a '+f.finalidade+(f.finalidade==='Investimento'&&g('aplic')?', referente a '+g('aplic'):'')+', nas seguintes condições:')}
+  const B=[];
+  if(!lcg){
+    if(invActive(f))L.inv.forEach(r=>B.push('- '+(r.inv||'Inversão')+': Valor total de '+R(r.valor||'0,00')+', sendo '+R(r.fin||'0,00')+' de Recursos Financiados e '+R(r.prop||'0,00')+' de Recursos Próprios.'));
+    if(g('valFin'))B.push('- Valor Financiado: '+R(g('valFin'))+'.');
+    if(g('valProp'))B.push('- Valor de Recursos Próprios: '+R(g('valProp'))+'.');
+    if(g('valTotal'))B.push('- Valor Total: '+R(g('valTotal'))+'.');
+    if(g('limInvCartao'))B.push('- Limite para Investimento de Cartão BNB: '+R(g('limInvCartao')));
+    if(g('limGiroCartao'))B.push('- Limite para Capital de Giro de Cartão BNB: '+R(g('limGiroCartao')));
+    if(g('limTotCartao'))B.push('- Limite Total de Cartão BNB: '+R(g('limTotCartao')));
+    if(g('fonte'))B.push('- Fonte de Recursos: '+g('fonte')+'.');
+    const pr=[g('progFne'),g('progRec')].filter(Boolean);if(pr.length)B.push('- Programa(s) de Crédito(s): '+joinE(pr)+'.');
+    if(g('prazo'))B.push('- Prazo: '+g('prazo')+' meses'+(g('carencia')?' com '+g('carencia')+' meses de carência':'')+'.');
+    if(g('taxaFne'))B.push('- Taxa FNE: '+g('taxaFne')+', conforme Dianet.');
+    if(g('taxaM'))B.push('- Taxa Recin: '+g('taxaM')+'% a.m. ou '+g('taxaA')+'% a.a.');
+    if(g('tarifaPct'))B.push('- Percentual da Tarifa: '+g('tarifaPct')+'%.');
+    if(g('tarifaVal'))B.push('- Valor da Tarifa: '+R(g('tarifaVal'))+'.');
+    if(g('tarifaAd'))B.push('- Tarifa de Aditivo: '+R(g('tarifaAd'))+'.');
+    if(g('limProp'))B.push('- Limite da Proposta: '+g('limProp')+(g('limProp')==='LCC'&&g('subLim')?', através do(s) sub-limite(s) '+g('subLim'):'')+'.');
+  }
+  const out=[];P.forEach(p=>out.push(p));
+  let text=P.join('\n\n');
+  if(B.length)text+='\n'+B.join('\n');
+  const T=[text];
+  if(!lcg){
+    if(g('objetivo'))T.push('O objetivo do crédito é a '+g('objetivo')+' do empreendimento.');
+    if(g('atividade'))T.push('A atividade econômica a ser financiada é '+g('atividade').replace(/^\s*\d{4}-?\d\/?\d{2}\s*-\s*/,'')+'.');
+    if(g('infoLRP').trim())T.push(g('infoLRP').trim());
+    if(g('justSemCartao').trim())T.push(g('justSemCartao').trim());
+    const pi=L.propImovel.filter(r=>r.nome||r.doc);
+    if(pi.length)T.push('A agência demonstra sua convicção acerca da regular ocupação do imóvel pelo proponente do crédito localizado a '+g('endereco')+' de propriedade de '+joinE(pi.map(r=>r.nome+', inscrito no CPF/CNPJ sob nº '+r.doc))+'.');
+    T.push(c('parent')&&g('parentJ')?g('parentJ'):'Não há grau de parentesco com funcionários do Banco.');
+    T.push(c('laudo')&&g('laudoJ')?g('laudoJ'):'Não há laudos com inaplicação de recursos.');
+    T.push(c('franq')?'A proponente do crédito é franquia da empresa '+g('franqNome')+'.':'A proponente não é franquia.');
+    if(c('desemb'))T.push('O crédito será liberado na conta de desembolso de nº '+g('desembConta')+'.');
+  }else{
+    const ter=f.finalidade==='LCGA'?'Alienante(s)':'Hipotecante(s)';
+    const lim=[];if(g('limValor'))lim.push('- Valor do Limite: '+R(g('limValor')));if(g('limPrazo'))lim.push('- Prazo do Limite (em anos): '+g('limPrazo'));
+    if(lim.length)T.push(lim.join('\n'));
+    const im=L.imov.map(r=>{const l=['Descrição do Imóvel: '+(r.desc||''),'Valor Avaliado: '+R(r.valor||'0,00'),'Sicad: '+(r.sicad||''),'Matrícula do Imóvel: '+(r.matr||''),'Forma de Avaliação do Imóvel: '+(r.valoracao||'')];
+      if(r.valoracao==='Avaliação Interna'){l.push('Nº do Laudo de Avaliação: '+(r.laudo||''),'Data de Avaliação: '+(r.dtAval||''))}
+      const iv=(r.interv||[]).filter(x=>x.nome||x.doc);if(iv.length){l.push('Interveniente(s) '+ter+':');iv.forEach(x=>l.push('- '+x.nome+', inscrito no CPF/CNPJ sob nº '+x.doc+'.'))}
+      return l.join('\n')});
+    if(im.length)T.push('Imóvel(is) em Garantia:\n'+im.join('\n\n'));
+    const bn=L.benef.filter(r=>r.nome||r.doc);
+    if(bn.length)T.push('Beneficiário(s) do Limite:\n'+bn.map(r=>'- '+r.nome+', inscrito no CPF/CNPJ sob nº '+r.doc+'.').join('\n'));
+  }
+  // garantias
+  const G=[];
+  const gl=(tit,r)=>{let x=tit+' de '+(r.nome||'')+', inscrito no CPF/CNPJ sob nº '+(r.doc||'');
+    if(isCnpj(r)){if(num(r.cap)>0)x+=', com patrimônio Líquido de '+R(r.cap)}
+    else{const p=[];if(num(r.renda)>0)p.push('renda mensal de '+R(r.renda));if(num(r.pat)>0)p.push('Patrimônio cadastrado de '+R(r.pat));if(p.length)x+=', com '+p.join(' e ')}
+    return '- '+x+'.'};
+  [['aval','Aval'],['avalS','Aval Secundário'],['fianca','Fiança'],['fiancaS','Fiança Secundária']].forEach(([k,t])=>L[k].filter(r=>r.nome||r.doc).forEach(r=>G.push(gl(t,r))));
+  if(c('alienMov'))G.push('- Alienação fiduciária dos bens objeto deste financiamento.');
+  if(c('cessApl'))G.push('- Fundo de Liquidez constituído por Cessão Fiduciária de Aplicação Financeira, no valor correspondente a '+g('cessAplPct')+'% do saldo devedor de principal da operação, mantido na conta vinculada nº '+g('cessAplConta')+', com prazo máximo para reconstituição do Fundo de Liquidez de em até 180 dias. Os recursos serão aplicados prévia e proporcionalmente a liberação.');
+  if(c('cessRec'))G.push('- Fundo de Liquidez constituído por recebíveis de duplicatas, no valor correspondente a '+g('cessRecPct')+'% do saldo devedor de principal da operação, mantido na conta vinculada nº '+g('cessRecConta')+', com prazo máximo para reconstituição do fundo em até 180 dias. Os recursos serão aplicados prévia e proporcionalmente a liberação.');
+  if(c('fgi'))G.push('- Garantia prestada de FGI PEAC de '+g('fgiPct')+'% do valor contratado.');
+  if(c('fampe'))G.push(f.fampeMod==='Mulher'?'- Garantia prestada do Sebrae Fampe, modalidade Mulher, no valor percentual de '+g('fampePct')+'% do valor contratado.':'- Garantia prestada do Sebrae Fampe no valor percentual de '+g('fampePct')+'% do valor contratado.');
+  if(c('fgo'))G.push('- Garantia prestada pelo Fundo Garantidor de Operações (FGO) de '+g('fgoPct')+'% do valor contratado.');
+  if(c('fiancaBanc'))G.push('- Fiança Bancária, prévia e proporcional a cada desembolso, sempre com valor equivalente a 100% do saldo devedor (somando-se o saldo devedor e o valor a desembolsar pleiteado pelo cliente), emitida por um ou mais bancos de Rating A ou AA e com limite aprovado e disponível no BNB, com vigência mínima de 1 (hum) ano.');
+  if(c('np'))G.push('- Emissão de Nota Promissória à ordem do Banco no valor de '+g('npPct')+'% do valor contratado.');
+  if(g('garLcg'))G.push('- Garantia de '+g('garLcg')+' referente ao instrumento de crédito de nº '+g('garLcgNum')+', formalizado junto a(o) '+g('garLcgNome')+' inscrito(a) no CPF/CNPJ sob nº '+g('garLcgDoc')+'.');
+  if(G.length)T.push('Garantias:\n'+G.join('\n'));
+  // relacionamento
+  const ex=[],nv=[];
+  const rad={rPacote:['Cliente com Pacote de Tarifa em conta corrente.','Cliente contratará Pacote de Tarifa na conta corrente.'],rPix:['Cliente com Chave PIX cadastrado em conta corrente.','Cliente cadastrará Chave PIX na conta corrente.'],rCartao:['Cliente com domicílio bancário de cartão transitando pela conta do BNB.','Cliente trará o domicílio bancário de cartões para o BNB.'],rCobr:['Cliente com cobrança bancária junto ao BNB.','Cliente cadastrará a cobrança bancária do BNB.']};
+  for(const k in rad){if(f[k]==='Existente')ex.push('- '+rad[k][0]);if(f[k]==='Nova')nv.push('- '+rad[k][1])}
+  const chk={pApl:['Cliente com aplicação financeira junto ao BNB.','Cliente fará aplicação financeira junto ao BNB.'],pPrest:['Cliente com Seguro Prestamista Junto da ICATU Seguros.','Cliente fará Seguro Prestamista Junto da ICATU Seguros.'],pCamed:['Cliente com Seguro da CAMED corretora.','Cliente fará Seguro com a CAMED corretora.'],pPrev:['Cliente com Previdência Privada junto à ICATU Seguros.','Cliente contratará Previdência Privada junto à ICATU Seguros.'],pVida:['Cliente com Seguro de Vida junto à ICATU Seguros.','Cliente contratará Seguro de Vida junto à ICATU Seguros.']};
+  for(const k in chk){if(f[k+'E'])ex.push('- '+chk[k][0]);if(f[k+'N'])nv.push('- '+chk[k][1])}
+  if(ex.length)T.push('Relacionamento Existente:\n'+ex.join('\n'));
+  if(nv.length)T.push('Relacionamento Novo:\n'+nv.join('\n'));
+  if(g('ocorr').trim())T.push('Ocorrências:\n- '+g('ocorr').trim());
+  T.push('Grupo Econômico:\n'+(f.grupo?'Cliente participante do Grupo Econômico '+g('grupoNome')+'.':'Cliente não pertence a grupo econômico.'));
+  if(g('outras').trim())T.push('Outras Considerações:\n'+g('outras').trim());
+  if(f.alcada)T.push('Alçada:\n'+(f.alcada==='COMAG'?'COMAG - A agência manifesta parecer favorável ao pleito.':f.alcada+' - A agência manifesta parecer favorável ao pleito e encaminha ao Comitê Estadual.'));
+  // data
+  const dm=(f.dtParecer||'').match(/^(\d\d)\/(\d\d)\/(\d{4})$/);
+  if(a||dm)T.push([a?tc(a[1])+' - '+a[2]:'',dm?(parseInt(dm[1],10)+' de '+MESES[parseInt(dm[2],10)-1]+' de '+dm[3]):''].filter(Boolean).join(', ')+'.');
+  const sg=(n,t,cargo)=>n?n+'\n'+cargo+(t==='Substituto'?' E. E.':''):'';
+  const sig=[sg(f.gerAg,f.gerAgT,'Gerente de Agência'),sg(f.gerRel,f.gerRelT,'Gerente de Relacionamento')].filter(Boolean);
+  let res=T.join('\n\n');
+  if(sig.length)res+='\n\n\n'+sig.join('\n\n\n');
+  return res;
+}
+function gerar(){
+  const t=report();$('#repTxt').value=t;const r=$('#rep');r.style.display='block';r.scrollIntoView({behavior:'smooth'});
+}
+async function copiar(){
+  const t=$('#repTxt').value;
+  try{await navigator.clipboard.writeText(t)}catch(e){$('#repTxt').select();document.execCommand('copy')}
+  toast('Relatório copiado.');
+}
+function baixar(){
+  const t=$('#repTxt').value.replace(/\r?\n/g,'\r\n');
+  const nome='Parecer_'+(digits(S.f.cnpj)||'proposta')+'.txt';
+  const b=new Blob(['\ufeff'+t],{type:'text/plain;charset=utf-8'});
+  const u=URL.createObjectURL(b),a=el('a',{href:u,download:nome});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);
+  toast('Arquivo '+nome+' gerado. Abra-o no Bloco de Notas.');
+}
+
+/* ---------- início ---------- */
+(function(){const r=LS.get('parecer_rascunho',null);if(r&&r.f)S=Object.assign(newState(),r);build()})();
+</script>
+</body>
+</html>
