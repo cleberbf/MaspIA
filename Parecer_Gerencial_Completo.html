@@ -138,6 +138,7 @@ const REG={},LREG=[],LISTS=[];let UID=0;
 const LCGx=f=>f.finalidade==='LCGA'||f.finalidade==='LCGH';
 const notLCG=f=>!LCGx(f);
 const invActive=f=>f.finalidade==='Investimento'&&APLIC_INV.includes(f.aplic);
+const MIXSEL=f=>FONTE_MIX.includes(f.finalidade)&&f.fonte==='FNE e Recin';
 const isFNE=f=>['FNE','FNE e Recin'].includes(f.fonte);
 const isREC=f=>['Recin','FNE e Recin'].includes(f.fonte);
 const gerList=tp=>{const l=LS.get('parecer_gerentes',[]).filter(g=>g.tipo===tp).map(g=>g.nome).sort((a,b)=>a.localeCompare(b,'pt-BR'));return l};
@@ -203,6 +204,10 @@ const SECS=[
  $m('limGiroCartao','Limite de Capital de Giro - Cartão BNB',{show:f=>[...GCG,...GCI].includes(f.finalidade)}),
  $m('limTotCartao','Limite Total - Cartão BNB',{auto:true,show:f=>CARTAO.includes(f.finalidade)}),
  {k:'fonte',l:'Fonte de Recursos',t:'select',force:true,opts:f=>FONTE_FNE.includes(f.finalidade)?['FNE']:FONTE_REC.includes(f.finalidade)?['Recin']:FONTE_MIX.includes(f.finalidade)?['FNE','FNE e Recin']:['FNE','Recin','FNE e Recin']},
+ $p('percFne','Percentual FNE',{show:MIXSEL}),
+ $p('percRecin','Percentual Recin',{auto:true,show:MIXSEL}),
+ $m('valGiroFne','Valor do Giro FNE',{auto:true,show:MIXSEL}),
+ $m('valGiroRecin','Valor do Giro Recin',{auto:true,show:MIXSEL}),
  {k:'progFne',l:'Programa FNE',t:'select',opts:PFNE,wide:true,show:isFNE},
  {k:'progRec',l:'Programa Recin',t:'select',opts:PREC,wide:true,show:isREC},
  {k:'prazo',l:'Prazo Total (em meses)',t:'int',max:3},
@@ -375,6 +380,12 @@ function recalc(){
   ['valFin','valProp'].forEach(k=>{const i=REG[k].w._inp;i.readOnly=ia;i.classList.toggle('auto',ia)});
   if(f.finalidade==='Investimento')put('valTotal',fmt(num(f.valFin)+num(f.valProp)));
   put('limTotCartao',(vis('limInvCartao')&&f.limInvCartao)||(vis('limGiroCartao')&&f.limGiroCartao)?fmt((vis('limInvCartao')?num(f.limInvCartao):0)+(vis('limGiroCartao')?num(f.limGiroCartao):0)):'');
+  {const mx=MIXSEL(f),pf=num(f.percFne),ok=mx&&f.percFne&&pf<=100;
+   if(REG.percFne)REG.percFne.w._inp.classList.toggle('bad',mx&&pf>100);
+   const base=num(f.finalidade==='FNE Giro'?f.valFin:f.limGiroCartao);
+   put('percRecin',ok?fmt(100-pf):'');
+   put('valGiroFne',ok?fmt(base*pf/100):'');
+   put('valGiroRecin',ok?fmt(base*(100-pf)/100):'')}
   put('taxaA',f.taxaM?fmt((Math.pow(1+num(f.taxaM)/100,12)-1)*100):'');
 }
 let svT;
@@ -502,6 +513,7 @@ function report(){
     if(g('limGiroCartao'))B.push('- Limite para Capital de Giro de Cartão BNB: '+R(g('limGiroCartao')));
     if(g('limTotCartao'))B.push('- Limite Total de Cartão BNB: '+R(g('limTotCartao')));
     if(g('fonte'))B.push('- Fonte de Recursos: '+g('fonte')+'.');
+    if(g('percFne')&&g('percRecin')){B.push('- Capital de Giro FNE: '+g('percFne')+'% - '+R(g('valGiroFne'))+'.');B.push('- Capital de Giro Recin: '+g('percRecin')+'% - '+R(g('valGiroRecin'))+'.')}
     const pr=[g('progFne'),g('progRec')].filter(Boolean);if(pr.length)B.push('- Programa(s) de Crédito(s): '+joinE(pr)+'.');
     if(g('prazo'))B.push('- Prazo: '+g('prazo')+' meses'+(g('carencia')?' com '+g('carencia')+' meses de carência':'')+'.');
     if(g('taxaFne'))B.push('- Taxa FNE: '+g('taxaFne')+', conforme Dianet.');
@@ -525,6 +537,7 @@ function report(){
     T.push(c('parent')&&g('parentJ')?g('parentJ'):'Não há grau de parentesco com funcionários do Banco.');
     T.push(c('laudo')&&g('laudoJ')?g('laudoJ'):'Não há laudos com inaplicação de recursos.');
     T.push(c('franq')?'A proponente do crédito é franquia da empresa '+g('franqNome')+'.':'A proponente não é franquia.');
+    if(num(g('valProp'))>0)T.push('Os recursos próprios serão provenientes do fluxo de caixa da empresa, os quais já estão disponíveis em meio circulante da empresa junto ao Banco. O cliente comprovará previamente a aplicação da parcela de recursos próprios proporcional aos desembolsos que serão efetuados, deduzidas as parcelas por ventura já aplicadas. O montante de recursos próprios está compatível com a atividade econômica da empresa.');
     if(c('desemb'))T.push('O crédito será liberado na conta de desembolso de nº '+g('desembConta')+'.');
   }else{
     const ter=f.finalidade==='LCGA'?'Alienante(s)':'Hipotecante(s)';
