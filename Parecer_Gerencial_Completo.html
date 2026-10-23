@@ -102,6 +102,8 @@ const maskDate=s=>{const d=digits(s).slice(0,8);let r=d.slice(0,2);if(d.length>2
 const maskMonth=s=>{const d=digits(s).slice(0,6);let r=d.slice(0,2);if(d.length>2)r+='/'+d.slice(2);return r};
 function maskDoc(s){const d=digits(s).slice(0,14);if(d.length<=11){let r=d.slice(0,3);if(d.length>3)r+='.'+d.slice(3,6);if(d.length>6)r+='.'+d.slice(6,9);if(d.length>9)r+='-'+d.slice(9);return r}return maskCnpj(d)}
 function maskCnpj(s){const d=digits(s).slice(0,14);let r=d.slice(0,2);if(d.length>2)r+='.'+d.slice(2,5);if(d.length>5)r+='.'+d.slice(5,8);if(d.length>8)r+='/'+d.slice(8,12);if(d.length>12)r+='-'+d.slice(12);return r}
+function cpfOk(c){c=digits(c);if(c.length!==11||/^(\d)\1+$/.test(c))return false;const f=n=>{let s=0;for(let i=0;i<n;i++)s+=c[i]*(n+1-i);const r=(s*10)%11;return r===10?0:r};return f(9)==c[9]&&f(10)==c[10]}
+const docOk=v=>{const d=digits(v);return d.length===11?cpfOk(d):d.length===14?cnpjOk(d):false};
 function cnpjOk(c){c=digits(c);if(c.length!==14||/^(\d)\1+$/.test(c))return false;const f=n=>{let s=0,p=n-7;for(let i=0;i<n;i++){s+=c[i]*p--;if(p<2)p=9}const r=s%11;return r<2?0:11-r};return f(12)==c[12]&&f(13)==c[13]}
 function dateOk(v,t){if(!v)return true;if(t==='date'){const m=v.match(/^(\d\d)\/(\d\d)\/(\d{4})$/);if(!m)return false;const d=new Date(+m[3],m[2]-1,+m[1]);return d.getFullYear()==m[3]&&d.getMonth()==m[2]-1&&d.getDate()==m[1]}if(t==='month'){const m=v.match(/^(\d\d)\/(\d{4})$/);return !!m&&m[1]>=1&&m[1]<=12}if(t==='year')return /^\d{4}$/.test(v)&&v>=1900&&v<=2100;return true}
 const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -315,7 +317,8 @@ function makeInput(fd,obj,onChange){
     if(fd.auto){inp.readOnly=true;inp.classList.add('auto')}
     inp.oninput=()=>{if(mask)inp.value=mask(inp.value);obj[fd.k]=inp.value;inp.classList.remove('bad');emit()};
     if(['date','month','year'].includes(t))inp.onblur=()=>inp.classList.toggle('bad',!dateOk(inp.value,t));
-    if(t==='cnpj')inp.onblur=()=>inp.classList.toggle('bad',!!inp.value&&digits(inp.value).length===14&&!cnpjOk(inp.value));
+    if(t==='cnpj')inp.onblur=()=>{const bad=!!inp.value&&!cnpjOk(inp.value);inp.classList.toggle('bad',bad);inp.title=bad?'CNPJ inválido':''};
+    if(t==='doc')inp.onblur=()=>{const bad=!!inp.value&&!docOk(inp.value);inp.classList.toggle('bad',bad);inp.title=bad?'CPF/CNPJ inválido':''};
     w._set=v=>{inp.value=v||''};
   }
   w._inp=inp;
@@ -553,21 +556,21 @@ function report(){
   }
   // garantias
   const G=[];
-  const gl=(tit,r)=>{let x=tit+' de '+(r.nome||'')+', inscrito no CPF/CNPJ sob nº '+(r.doc||'');
+  const gl=r=>{let x=(r.nome||'')+', inscrito no CPF/CNPJ sob nº '+(r.doc||'');
     if(isCnpj(r)){if(num(r.cap)>0)x+=', com patrimônio Líquido de '+R(r.cap)}
     else{const p=[];if(num(r.renda)>0)p.push('renda mensal de '+R(r.renda));if(num(r.pat)>0)p.push('Patrimônio cadastrado de '+R(r.pat));if(p.length)x+=', com '+p.join(' e ')}
-    return '- '+x+'.'};
-  [['aval','Aval'],['avalS','Aval Secundário'],['fianca','Fiança'],['fiancaS','Fiança Secundária']].forEach(([k,t])=>L[k].filter(r=>r.nome||r.doc).forEach(r=>G.push(gl(t,r))));
-  if(c('alienMov'))G.push('- Alienação fiduciária dos bens objeto deste financiamento.');
-  if(c('cessApl'))G.push('- Fundo de Liquidez constituído por Cessão Fiduciária de Aplicação Financeira, no valor correspondente a '+g('cessAplPct')+'% do saldo devedor de principal da operação, mantido na conta vinculada nº '+g('cessAplConta')+', com prazo máximo para reconstituição do Fundo de Liquidez de em até 180 dias. Os recursos serão aplicados prévia e proporcionalmente a liberação.');
-  if(c('cessRec'))G.push('- Fundo de Liquidez constituído por recebíveis de duplicatas, no valor correspondente a '+g('cessRecPct')+'% do saldo devedor de principal da operação, mantido na conta vinculada nº '+g('cessRecConta')+', com prazo máximo para reconstituição do fundo em até 180 dias. Os recursos serão aplicados prévia e proporcionalmente a liberação.');
-  if(c('fgi'))G.push('- Garantia prestada de FGI PEAC de '+g('fgiPct')+'% do valor contratado.');
-  if(c('fampe'))G.push(f.fampeMod==='Mulher'?'- Garantia prestada do Sebrae Fampe, modalidade Mulher, no valor percentual de '+g('fampePct')+'% do valor contratado.':'- Garantia prestada do Sebrae Fampe no valor percentual de '+g('fampePct')+'% do valor contratado.');
-  if(c('fgo'))G.push('- Garantia prestada pelo Fundo Garantidor de Operações (FGO) de '+g('fgoPct')+'% do valor contratado.');
-  if(c('fiancaBanc'))G.push('- Fiança Bancária, prévia e proporcional a cada desembolso, sempre com valor equivalente a 100% do saldo devedor (somando-se o saldo devedor e o valor a desembolsar pleiteado pelo cliente), emitida por um ou mais bancos de Rating A ou AA e com limite aprovado e disponível no BNB, com vigência mínima de 1 (hum) ano.');
-  if(c('np'))G.push('- Emissão de Nota Promissória à ordem do Banco no valor de '+g('npPct')+'% do valor contratado.');
-  if(g('garLcg'))G.push('- Garantia de '+g('garLcg')+' referente ao instrumento de crédito de nº '+g('garLcgNum')+', formalizado junto a(o) '+g('garLcgNome')+' inscrito(a) no CPF/CNPJ sob nº '+g('garLcgDoc')+'.');
-  if(G.length)T.push('Garantias:\n'+G.join('\n'));
+    return x+'.'};
+  [['aval','Aval'],['avalS','Aval Secundário'],['fianca','Fiança'],['fiancaS','Fiança Secundária']].forEach(([k,t])=>{const rs=L[k].filter(r=>r.nome||r.doc);if(rs.length)G.push({t:t+':',s:rs.map(gl)})});
+  if(c('alienMov'))G.push('Alienação fiduciária dos bens objeto deste financiamento.');
+  if(c('cessApl'))G.push('Fundo de Liquidez constituído por Cessão Fiduciária de Aplicação Financeira, no valor correspondente a '+g('cessAplPct')+'% do saldo devedor de principal da operação, mantido na conta vinculada nº '+g('cessAplConta')+', com prazo máximo para reconstituição do Fundo de Liquidez de em até 180 dias. Os recursos serão aplicados prévia e proporcionalmente a liberação.');
+  if(c('cessRec'))G.push('Fundo de Liquidez constituído por recebíveis de duplicatas, no valor correspondente a '+g('cessRecPct')+'% do saldo devedor de principal da operação, mantido na conta vinculada nº '+g('cessRecConta')+', com prazo máximo para reconstituição do fundo em até 180 dias. Os recursos serão aplicados prévia e proporcionalmente a liberação.');
+  if(c('fgi'))G.push('Garantia prestada de FGI PEAC de '+g('fgiPct')+'% do valor contratado.');
+  if(c('fampe'))G.push(f.fampeMod==='Mulher'?'Garantia prestada do Sebrae Fampe, modalidade Mulher, no valor percentual de '+g('fampePct')+'% do valor contratado.':'Garantia prestada do Sebrae Fampe no valor percentual de '+g('fampePct')+'% do valor contratado.');
+  if(c('fgo'))G.push('Garantia prestada pelo Fundo Garantidor de Operações (FGO) de '+g('fgoPct')+'% do valor contratado.');
+  if(c('fiancaBanc'))G.push('Fiança Bancária, prévia e proporcional a cada desembolso, sempre com valor equivalente a 100% do saldo devedor (somando-se o saldo devedor e o valor a desembolsar pleiteado pelo cliente), emitida por um ou mais bancos de Rating A ou AA e com limite aprovado e disponível no BNB, com vigência mínima de 1 (hum) ano.');
+  if(c('np'))G.push('Emissão de Nota Promissória à ordem do Banco no valor de '+g('npPct')+'% do valor contratado.');
+  if(g('garLcg'))G.push('Garantia de '+g('garLcg')+' referente ao instrumento de crédito de nº '+g('garLcgNum')+', formalizado junto a(o) '+g('garLcgNome')+' inscrito(a) no CPF/CNPJ sob nº '+g('garLcgDoc')+'.');
+  if(G.length)T.push('Garantias:\n'+G.map((x,i)=>{const l=String.fromCharCode(97+i);return typeof x==='string'?l+') '+x:l+') '+x.t+x.s.map((y,j)=>'\n    '+l+'.'+(j+1)+') '+y).join('')}).join('\n'));
   // relacionamento
   const ex=[],nv=[];
   const rad={rPacote:['Cliente com Pacote de Tarifa em conta corrente.','Cliente contratará Pacote de Tarifa na conta corrente.'],rPix:['Cliente com Chave PIX cadastrado em conta corrente.','Cliente cadastrará Chave PIX na conta corrente.'],rCartao:['Cliente com domicílio bancário de cartão transitando pela conta do BNB.','Cliente trará o domicílio bancário de cartões para o BNB.'],rCobr:['Cliente com cobrança bancária junto ao BNB.','Cliente cadastrará a cobrança bancária do BNB.']};

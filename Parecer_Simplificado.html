@@ -102,6 +102,8 @@ const maskDate=s=>{const d=digits(s).slice(0,8);let r=d.slice(0,2);if(d.length>2
 const maskMonth=s=>{const d=digits(s).slice(0,6);let r=d.slice(0,2);if(d.length>2)r+='/'+d.slice(2);return r};
 function maskDoc(s){const d=digits(s).slice(0,14);if(d.length<=11){let r=d.slice(0,3);if(d.length>3)r+='.'+d.slice(3,6);if(d.length>6)r+='.'+d.slice(6,9);if(d.length>9)r+='-'+d.slice(9);return r}return maskCnpj(d)}
 function maskCnpj(s){const d=digits(s).slice(0,14);let r=d.slice(0,2);if(d.length>2)r+='.'+d.slice(2,5);if(d.length>5)r+='.'+d.slice(5,8);if(d.length>8)r+='/'+d.slice(8,12);if(d.length>12)r+='-'+d.slice(12);return r}
+function cpfOk(c){c=digits(c);if(c.length!==11||/^(\d)\1+$/.test(c))return false;const f=n=>{let s=0;for(let i=0;i<n;i++)s+=c[i]*(n+1-i);const r=(s*10)%11;return r===10?0:r};return f(9)==c[9]&&f(10)==c[10]}
+const docOk=v=>{const d=digits(v);return d.length===11?cpfOk(d):d.length===14?cnpjOk(d):false};
 function cnpjOk(c){c=digits(c);if(c.length!==14||/^(\d)\1+$/.test(c))return false;const f=n=>{let s=0,p=n-7;for(let i=0;i<n;i++){s+=c[i]*p--;if(p<2)p=9}const r=s%11;return r<2?0:11-r};return f(12)==c[12]&&f(13)==c[13]}
 function dateOk(v,t){if(!v)return true;if(t==='date'){const m=v.match(/^(\d\d)\/(\d\d)\/(\d{4})$/);if(!m)return false;const d=new Date(+m[3],m[2]-1,+m[1]);return d.getFullYear()==m[3]&&d.getMonth()==m[2]-1&&d.getDate()==m[1]}if(t==='month'){const m=v.match(/^(\d\d)\/(\d{4})$/);return !!m&&m[1]>=1&&m[1]<=12}if(t==='year')return /^\d{4}$/.test(v)&&v>=1900&&v<=2100;return true}
 const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
@@ -160,6 +162,7 @@ const SECS=[
  {k:'gerRel',l:'Gerente de Relacionamento',t:'select',opts:gerOpts('rel','gerRel')},
  {t:'btn',l:'Cadastrar gerentes',fn:()=>gerentes()},
  {k:'cnpj',l:'CNPJ do cliente',t:'cnpj',after:()=>{const b=el('button',{class:'sec',type:'button',onclick:()=>buscar()},'Buscar dados do CNPJ');const m=el('div',{class:'hint',id:'cnpjMsg'});return el('div',{},b,m)},on:f=>{if(digits(f.cnpj).length===14&&cnpjOk(f.cnpj))buscar()}},
+ {k:'nomeProp',l:'Nome do Proponente',t:'text',max:150,wide:true},
  {k:'endereco',l:'Endereço do Cliente',t:'text',max:400,wide:true,show:f=>digits(f.cnpj).length===14},
  {k:'finalidade',l:'Finalidade',t:'select',opts:FIN,wide:true}
 ]},
@@ -286,7 +289,8 @@ function makeInput(fd,obj,onChange){
     if(fd.auto){inp.readOnly=true;inp.classList.add('auto')}
     inp.oninput=()=>{if(mask)inp.value=mask(inp.value);obj[fd.k]=inp.value;inp.classList.remove('bad');emit()};
     if(['date','month','year'].includes(t))inp.onblur=()=>inp.classList.toggle('bad',!dateOk(inp.value,t));
-    if(t==='cnpj')inp.onblur=()=>inp.classList.toggle('bad',!!inp.value&&digits(inp.value).length===14&&!cnpjOk(inp.value));
+    if(t==='cnpj')inp.onblur=()=>{const bad=!!inp.value&&!cnpjOk(inp.value);inp.classList.toggle('bad',bad);inp.title=bad?'CNPJ inválido':''};
+    if(t==='doc')inp.onblur=()=>{const bad=!!inp.value&&!docOk(inp.value);inp.classList.toggle('bad',bad);inp.title=bad?'CPF/CNPJ inválido':''};
     w._set=v=>{inp.value=v||''};
   }
   w._inp=inp;
@@ -492,18 +496,17 @@ function report(){
   }
   // garantias
   const G=[];
-  const gl=(tit,r)=>'- '+tit+' de '+(r.nome||'')+', CPF/CNPJ nº '+(r.doc||'')+'.';
-  [['aval','Aval'],['avalS','Aval Secundário'],['fianca','Fiança'],['fiancaS','Fiança Secundária']].forEach(([k,t])=>L[k].filter(r=>r.nome||r.doc).forEach(r=>G.push(gl(t,r))));
-  if(c('alienMov'))G.push('- Alienação fiduciária.');
-  if(c('cessApl'))G.push('- Fundo de Liquidez de Aplicação Financeira, de '+g('cessAplPct')+'%, na conta vinculada nº '+g('cessAplConta')+'.');
-  if(c('cessRec'))G.push('- Fundo de Liquidez Duplicatas, de '+g('cessRecPct')+'%, na conta vinculada nº '+g('cessRecConta')+'.');
-  if(c('fgi'))G.push('- FGI PEAC de '+g('fgiPct')+'%.');
-  if(c('fampe'))G.push(f.fampeMod==='Mulher'?'- Sebrae Fampe - Mulher de '+g('fampePct')+'%.':'- Sebrae Fampe de '+g('fampePct')+'%.');
-  if(c('fgo'))G.push('- FGO Pronampe de '+g('fgoPct')+'%.');
-  if(c('fiancaBanc'))G.push('- Fiança Bancária.');
-  if(c('np'))G.push('- Nota Promissória de '+g('npPct')+'%.');
-  if(g('garLcg'))G.push('- '+g('garLcg')+' referente ao I.C. de nº '+g('garLcgNum')+', de '+g('garLcgNome')+' - CPF/CNPJ nº '+g('garLcgDoc')+'.');
-  if(G.length)T.push('Garantias:\n'+G.join('\n'));
+  [['aval','Aval'],['avalS','Aval Secundário'],['fianca','Fiança'],['fiancaS','Fiança Secundária']].forEach(([k,t])=>{const rs=L[k].filter(r=>r.nome||r.doc);if(rs.length)G.push({t:t+':',s:rs.map(r=>[r.nome,r.doc&&'CPF/CNPJ nº '+r.doc].filter(Boolean).join(', ')+'.')})});
+  if(c('alienMov'))G.push('Alienação fiduciária.');
+  if(c('cessApl'))G.push('Fundo de Liquidez de Aplicação Financeira, de '+g('cessAplPct')+'%, na conta vinculada nº '+g('cessAplConta')+'.');
+  if(c('cessRec'))G.push('Fundo de Liquidez Duplicatas, de '+g('cessRecPct')+'%, na conta vinculada nº '+g('cessRecConta')+'.');
+  if(c('fgi'))G.push('FGI PEAC de '+g('fgiPct')+'%.');
+  if(c('fampe'))G.push(f.fampeMod==='Mulher'?'Sebrae Fampe - Mulher de '+g('fampePct')+'%.':'Sebrae Fampe de '+g('fampePct')+'%.');
+  if(c('fgo'))G.push('FGO Pronampe de '+g('fgoPct')+'%.');
+  if(c('fiancaBanc'))G.push('Fiança Bancária.');
+  if(c('np'))G.push('Nota Promissória de '+g('npPct')+'%.');
+  if(g('garLcg'))G.push(g('garLcg')+' referente ao I.C. de nº '+g('garLcgNum')+', de '+g('garLcgNome')+' - CPF/CNPJ nº '+g('garLcgDoc')+'.');
+  if(G.length)T.push('Garantias:\n'+G.map((x,i)=>{const l=String.fromCharCode(97+i);return typeof x==='string'?l+') '+x:l+') '+x.t+x.s.map((y,j)=>'\n    '+l+'.'+(j+1)+') '+y).join('')}).join('\n'));
   // relacionamento
   const ex=[],nv=[];
   const rad={rPacote:['Pacote de Tarifa.','Pacote de Tarifa.'],rPix:['Chave Pix.','Chave Pix.'],rCartao:['Recebíveis de Cartão.','Recebíveis de Cartão.'],rCobr:['Cobrança Bancária.','Cobrança Bancária.']};
