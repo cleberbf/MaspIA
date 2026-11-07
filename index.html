@@ -15,7 +15,7 @@ header .sistema span{color:#F16323}
 header h1{margin:0;font-size:22px;font-weight:600;letter-spacing:.2px}
 header p{margin:4px 0 0;font-size:14px;opacity:.88}
 main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 20px}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;width:100%;max-width:980px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;width:100%;max-width:1200px}
 .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center;text-decoration:none;color:var(--tx);background:#fff;border:2px solid var(--bd);border-radius:14px;padding:34px 22px 30px;min-height:290px;transition:background .15s,border-color .15s,color .15s,transform .15s}
 .btn svg{width:112px;height:112px;flex:none}
 .btn .ic-bg{fill:var(--c-lt);transition:fill .15s}
@@ -30,6 +30,7 @@ main{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 
 .btn:hover .wh,.btn:focus-visible .wh{fill:var(--c)}
 .btn:focus-visible{outline:3px solid var(--c-dk);outline-offset:3px}
 footer{padding:14px 24px;font-size:12px;color:var(--mut);text-align:center}
+@media (max-width:1000px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:720px}}
 @media (max-width:760px){.grid{grid-template-columns:1fr}.btn{min-height:0;flex-direction:row;justify-content:flex-start;text-align:left;padding:20px 22px;gap:18px}.btn svg{width:76px;height:76px}}
 @media (prefers-reduced-motion:reduce){.btn{transition:none}.btn:hover,.btn:focus-visible{transform:none}}
 </style>
@@ -80,6 +81,18 @@ footer{padding:14px 24px;font-size:12px;color:var(--mut);text-align:center}
         <path class="wh" d="M74 80h3v3h-3zM79 80h3v3h-3z"/>
       </svg>
       <span>DISPENSA DE LICENÇA AMBIENTAL EM NATAL-RN</span>
+    </a>
+
+    <a class="btn" href="Notas-Fiscais-OCR.html">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ic-bg" cx="60" cy="60" r="56"/>
+        <path class="ln" d="M40 24h40a4 4 0 0 1 4 4v64l-6-4-6 4-6-4-6 4-6-4-6 4-6-4V28a4 4 0 0 1 4-4z"/>
+        <path class="ln" d="M44 38h20M44 52h32M44 62h32M44 72h18"/>
+        <circle class="fl" cx="82" cy="88" r="14"/>
+        <circle cx="80" cy="86" r="5" stroke="#fff" fill="none" stroke-width="3.5"/>
+        <path d="M84 90l5 5" stroke="#fff" fill="none" stroke-width="3.5" stroke-linecap="round"/>
+      </svg>
+      <span>EXTRATOR DE NOTAS FISCAIS</span>
     </a>
 
   </nav>

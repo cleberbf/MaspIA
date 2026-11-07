@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Extrator de Notas Fiscais</title>
+<style>
+:root{--bg:#f7f4f5;--card:#fff;--tx:#201a1c;--mut:#6f6468;--bd:#e0d6d9;--ac:#A3003D;--acx:#fff;--wa:#fff1d0;--ex:#f1e9eb;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171214;--card:#221b1e;--tx:#efe7e9;--mut:#a89aa0;--bd:#3a2f34;--ac:#C2154F;--acx:#fff;--wa:#3a3115;--ex:#2c2327}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:var(--ac);color:var(--acx);padding:14px 16px}
+.hin{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px}
+header h1{font-size:19px;margin:0}
+header a{color:var(--acx);text-decoration:none;border:1px solid rgba(255,255,255,.55);border-radius:8px;padding:6px 12px;font-size:14px}
+header a:hover{background:rgba(255,255,255,.15)}
+main{max-width:1100px;margin:0 auto;padding:20px 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 12px;color:var(--ac)}
+button,label.btn{font:inherit;background:var(--ac);color:var(--acx);border:0;border-radius:8px;padding:9px 16px;cursor:pointer;display:inline-block}
+button.sec,label.btn.sec{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.fl{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.fl label{display:block;font-size:13px;color:var(--mut)}
+.fl input{display:block;width:100%;margin-top:3px;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+.fl input:focus{outline:2px solid var(--ac);outline-offset:-1px}
+.fl input[readonly]{background:var(--ex)}
+#bar{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin-top:12px}#bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+#st{color:var(--mut);margin-top:8px;font-size:14px}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:1000px;font-size:13.5px}
+th,td{border-bottom:1px solid var(--bd);padding:6px 6px;text-align:left;vertical-align:middle}th{color:var(--mut);font-weight:600}
+td input{width:100%;font:inherit;background:transparent;color:var(--tx);border:1px solid transparent;border-radius:5px;padding:3px 5px}td input:focus{border-color:var(--ac);outline:0}
+td.f{font-size:12px;color:var(--mut);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td.s{font-size:12px;white-space:nowrap}
+tr.rv td{background:var(--wa)}tr.ex td{background:var(--ex);color:var(--mut)}tr.ex td input{color:var(--mut)}
+.note{font-size:13px;color:var(--mut);margin:10px 0 0}
+</style>
+</head>
+<body>
+<header><div class="hin"><a href="index.html">← Voltar</a><h1>Extrator de Notas Fiscais</h1></div></header>
+<main>
+<div class="card">
+  <h2>Dados do proponente</h2>
+  <div class="fl">
+    <label>CNPJ do Proponente<input id="prop" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18"></label>
+    <label>Data do Protocolo<input id="prot" type="date"></label>
+    <label>Data Limite de Notas<input id="lim" type="date" readonly></label>
+  </div>
+</div>
+<div class="card">
+  <h2>Notas fiscais</h2>
+  <div class="row">
+    <label class="btn">Selecionar pasta<input id="pick" type="file" webkitdirectory multiple hidden></label>
+    <label class="btn sec">Ou escolher arquivos<input id="pickf" type="file" multiple accept=".pdf,image/*" hidden></label>
+    <button id="go" disabled>Processar</button>
+  </div>
+  <div id="bar"><i></i></div>
+  <div id="st">Nenhuma pasta selecionada.</div>
+  <p class="note">Tudo é processado neste computador. Nenhum arquivo é enviado a serviços de IA. PDFs com texto são lidos direto; imagens e PDFs escaneados passam por OCR (Tesseract.js). Na primeira execução o navegador vai baixar o motor e o modelo de OCR em português. Confira os valores: linhas amarelas precisam de revisão e linhas cinza ficam fora da planilha e do PDF ou pela Nota Fiscal não ter o CNPJ do Proponente ou ser inferior a 6 meses da data do protocolo. Todos os campos são editáveis.</p>
+</div>
+<div class="card" id="res" hidden>
+  <div class="row" style="margin-bottom:12px">
+    <button id="dx" disabled>Baixar planilha (.xlsx)</button>
+    <button id="dp" class="sec" disabled>Baixar PDF unificado</button>
+    <span id="cnt" class="note" style="margin:0"></span>
+  </div>
+  <div class="tw"><table><thead><tr><th>#</th><th>Situação</th><th>Nº NF</th><th>Emissão</th><th>CNPJ Remetente</th><th>CNPJ Destinatário</th><th>Valor Total</th><th>A vencer</th><th>Valor Pago</th><th>Chave (NF-e)</th><th>Arquivo</th></tr></thead><tbody id="tb"></tbody></table></div>
+</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const $=id=>document.getElementById(id);
+let files=[],rows=[],worker=null;
+const dig=s=>String(s||"").replace(/\D/g,"");
+const fmtCnpj=d=>d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5");
+const cnp=v=>{const d=dig(v);return d.length===14?fmtCnpj(d):v};
+const dnum=s=>{const m=String(s||"").match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?+(m[3]+m[2]+m[1]):NaN};
+const num=v=>{const n=parseFloat(String(v).replace(/\./g,"").replace(",","."));return isNaN(n)?NaN:n};
+const money=n=>isNaN(n)?"":n.toFixed(2).replace(".",",").replace(/\B(?=(\d{3})+(?!\d))/g,".");
+const now=new Date(),TODAY=now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
+// campos do proponente
+$("prop").oninput=e=>{const d=dig(e.target.value).slice(0,14);e.target.value=d.length===14?fmtCnpj(d):d;e.target.style.borderColor=d.length===14&&!cnpjOk(d)?"#d92d20":"";refresh()};
+$("prot").oninput=()=>{const v=$("prot").value;if(!v){$("lim").value=""}else{const d=new Date(v+"T00:00:00Z");d.setUTCDate(d.getUTCDate()-180);$("lim").value=d.toISOString().slice(0,10)}refresh()};
+const nat=(a,b)=>(a.webkitRelativePath||a.name).localeCompare(b.webkitRelativePath||b.name,"pt-BR",{numeric:true});
+const okf=f=>/\.pdf$/i.test(f.name)||/^image\//.test(f.type)||/\.(jpe?g|png|webp|bmp|gif)$/i.test(f.name);
+function setFiles(l){files=[...l].filter(okf).sort(nat);$("st").textContent=files.length?files.length+" arquivo(s) encontrado(s).":"Nenhum PDF ou imagem encontrado.";$("go").disabled=!files.length}
+$("pick").onchange=e=>setFiles(e.target.files);$("pickf").onchange=e=>setFiles(e.target.files);
+const isPdf=f=>/\.pdf$/i.test(f.name);
+function cnpjOk(c){if(!/^\d{14}$/.test(c)||/^(\d)\1+$/.test(c))return false;const d=n=>{let s=0,p=n-7;for(let i=0;i<n;i++){s+=+c[i]*p--;if(p<2)p=9}const r=s%11;return r<2?0:11-r};return d(12)==+c[12]&&d(13)==+c[13]}
+function chaveOk(k){if(!/^\d{44}$/.test(k))return false;let s=0,p=2;for(let i=42;i>=0;i--){s+=+k[i]*p;p=p===9?2:p+1}const r=s%11;return(r<2?0:11-r)===+k[43]}
+function parseText(t){
+  const o={};const flat=t.replace(/\s+/g,"");
+  for(const m of flat.matchAll(/\d{44}/g)){const k=m[0];if(cnpjOk(k.slice(6,20))&&k.slice(20,22)==="55"&&chaveOk(k)){o.chave=k;o.numero=String(parseInt(k.slice(25,34),10));o.cnpjRem=k.slice(6,20);break}}
+  const dm=t.match(/emiss[aã]o[\s\S]{0,60}?(\d{2}\/\d{2}\/\d{4})/i)||t.match(/(\d{2}\/\d{2}\/\d{4})/);
+  if(dm)o.data=dm[1];
+  const cn=[...t.matchAll(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g)].map(m=>dig(m[0])).filter(cnpjOk);
+  if(!o.cnpjRem&&cn[0])o.cnpjRem=cn[0];
+  const di=t.search(/DESTINAT[ÁA]RIO|TOMADOR/i);
+  if(di>=0){let sec=t.slice(di);const e=sec.search(/FATURA|DUPLICATA|C[ÁA]LCULO\s+DO\s+IMPOSTO|TRANSPORTADOR|DADOS\s+DOS?\s+PRODUTOS/i);if(e>0)sec=sec.slice(0,e);
+    const sc=[...sec.matchAll(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g)].map(m=>dig(m[0])).filter(c=>cnpjOk(c)&&c!==o.cnpjRem);
+    if(sc[0])o.cnpjDes=sc[0];else{const cp=sec.match(/\b\d{3}\.\d{3}\.\d{3}-\d{2}\b/);if(cp)o.cnpjDes=dig(cp[0])}}
+  if(!o.cnpjDes){const dst=cn.find(c=>c!==o.cnpjRem);if(dst)o.cnpjDes=dst}
+  const vm=t.match(/VALOR\s+TOTAL\s+DA\s+(?:NOTA|NF-?E?)[\s\S]{0,40}?(\d{1,3}(?:\.\d{3})*,\d{2})/i)||t.match(/(?:TOTAL\s+DA\s+NOTA|VALOR\s+(?:TOTAL|L[IÍ]QUIDO)(?:\s+DOS?\s+SERVI[CÇ]OS)?)[^\d]{0,40}(\d{1,3}(?:\.\d{3})*,\d{2})/i);
+  if(vm)o.valor=vm[1];
+  const fs=t.search(/FATURA|DUPLICATA/i);
+  if(fs>=0){let sec=t.slice(fs);const e=sec.search(/C[ÁA]LCULO\s+DO\s+IMPOSTO|TRANSPORTADOR|DADOS\s+DOS?\s+PRODUTOS/i);if(e>0)sec=sec.slice(0,e);
+    o.dups=[...sec.matchAll(/(\d{2}\/\d{2}\/\d{4})\D{0,25}?(\d{1,3}(?:\.\d{3})*,\d{2})/g)].map(m=>({venc:m[1],valor:m[2]}))}
+  return o;
+}
+const complete=o=>o.numero&&o.data&&o.cnpjRem&&o.cnpjDes&&o.valor;
+async function pdfText(buf){const d=await pdfjsLib.getDocument({data:buf.slice(0)}).promise;let t="";for(let i=1;i<=Math.min(d.numPages,3);i++){const p=await d.getPage(i);const c=await p.getTextContent();t+=c.items.map(x=>x.str).join(" ")+"\n"}return{t,d}}
+async function pdfPageJpeg(d){const p=await d.getPage(1);const v=p.getViewport({scale:2.5});const c=document.createElement("canvas");c.width=v.width;c.height=v.height;await p.render({canvasContext:c.getContext("2d"),viewport:v}).promise;return toBlob(c)}
+function toBlob(c){const m=2400,k=Math.min(1,m/Math.max(c.width,c.height));if(k<1){const n=document.createElement("canvas");n.width=c.width*k;n.height=c.height*k;n.getContext("2d").drawImage(c,0,0,n.width,n.height);c=n}return new Promise(r=>c.toBlob(r,"image/jpeg",.88))}
+async function imgJpeg(f){const bm=await createImageBitmap(f);const c=document.createElement("canvas");c.width=bm.width;c.height=bm.height;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,c.width,c.height);x.drawImage(bm,0,0);return toBlob(c)}
+async function ocrRead(blob,name){
+  if(typeof Tesseract==="undefined")throw new Error("o motor de OCR não carregou");
+  if(!worker){$("st").textContent="Carregando motor de OCR (na primeira vez baixa o modelo em português)...";
+    worker=await Tesseract.createWorker("por",1,{logger:m=>{if(m.status==="recognizing text")$("st").textContent="OCR em "+name+": "+Math.round(m.progress*100)+"%"}})}
+  const {data}=await worker.recognize(blob);
+  return parseText(data.text);
+}
+function clean(o){
+  let ch=dig(o.chave);if(!(ch.length===44&&ch.slice(20,22)==="55"))ch="";
+  return{numero:String(o.numero||"").replace(/^0+(?=\d)/,""),data:o.data||"",chave:ch,cnpjRem:dig(o.cnpjRem),cnpjDes:dig(o.cnpjDes),valor:o.valor||"",dups:(Array.isArray(o.dups)?o.dups:[]).filter(d=>d&&d.venc&&d.valor)};
+}
+function futuras(r){return r.dups.reduce((s,d)=>dnum(d.venc)>TODAY?s+(num(d.valor)||0):s,0)}
+function calcPago(r){const t=num(r.valor);return isNaN(t)?"":money(t-futuras(r))}
+$("go").onclick=async()=>{
+  $("go").disabled=true;rows=[];$("res").hidden=true;let ocrOff=false;
+  for(let i=0;i<files.length;i++){
+    const f=files[i];$("st").textContent=`Processando ${i+1}/${files.length}: ${f.name}`;$("bar").firstChild.style.width=(i/files.length*100)+"%";
+    let o={},img=null;
+    try{
+      const buf=await f.arrayBuffer();
+      if(isPdf(f)){
+        const {t,d}=await pdfText(buf);o=parseText(t);
+        if(!complete(o)&&!ocrOff){try{const a=await ocrRead(await pdfPageJpeg(d),f.name);o={...a,...Object.fromEntries(Object.entries(o).filter(([k,v])=>v&&!(Array.isArray(v)&&!v.length)))}}catch(e){ocrOff=e.message||"erro"}}
+      }else{img=await imgJpeg(f);if(!ocrOff){try{o=await ocrRead(img,f.name)}catch(e){ocrOff=e.message||"erro"}}}
+    }catch(e){}
+    o=clean(o);const r={...o,file:f.webkitRelativePath||f.name,f,img};r.pago=calcPago(r);rows.push(r);
+  }
+  if(worker){try{await worker.terminate()}catch(e){}worker=null}
+  $("bar").firstChild.style.width="100%";
+  $("st").textContent=`Concluído: ${rows.length} arquivo(s).`+(ocrOff?" OCR indisponível ("+ocrOff+"). Verifique a conexão com a internet e preencha manualmente os campos em branco.":"");
+  render();$("res").hidden=false;$("go").disabled=false;
+};
+function reason(r){
+  if(!complete(r))return"Revisar: dados incompletos";
+  if(!cnpjOk(dig(r.cnpjRem)))return"Revisar: CNPJ remetente inválido";
+  const dd=dig(r.cnpjDes);if(dd.length!==11&&!cnpjOk(dd))return"Revisar: CNPJ destinatário inválido";
+  if(r.chave){const k=dig(r.chave);if(!chaveOk(k))return"Revisar: dígito da chave inválido";if(k.slice(6,20)!==dig(r.cnpjRem)||String(parseInt(k.slice(25,34),10))!==String(parseInt(dig(r.numero)||"0",10)))return"Revisar: chave diverge de nº/CNPJ"}
+  const p=dig($("prop").value),l=$("lim").value;if(p.length!==14||!cnpjOk(p)||!l)return"Informe proponente válido e protocolo";
+  if(dig(r.cnpjDes)!==p)return"Excluída: destinatário ≠ proponente";
+  if(dnum(r.data)<+l.replace(/-/g,""))return"Excluída: anterior à data limite";
+  return"";
+}
+function refresh(){
+  let inc=0,pend=false;
+  document.querySelectorAll("#tb tr").forEach((tr,i)=>{const r=rows[i],m=reason(r);tr.querySelector(".s").textContent=m||"Incluída";tr.className=m.startsWith("Excluída")?"ex":m?"rv":"";if(!m)inc++;if(m.startsWith("Revisar")||m.startsWith("Informe"))pend=true});
+  const ok=rows.length&&!pend;$("dx").disabled=$("dp").disabled=!ok||!inc;
+  $("cnt").textContent=rows.length?`${inc} de ${rows.length} nota(s) serão exportadas`+(pend?" — resolva as pendências para liberar o download":""):"";
+}
+function render(){
+  const tb=$("tb");tb.innerHTML="";
+  rows.forEach((r,i)=>{
+    const tr=document.createElement("tr");
+    const c=h=>{const td=document.createElement("td");if(h!=null)td.append(h);tr.append(td);return td};
+    c(String(i+1));c("").className="s";
+    const aven=document.createElement("td");
+    const inp=(k,fmt)=>{const x=document.createElement("input");x.value=fmt?fmt(r[k]):r[k];
+      x.onchange=()=>{r[k]=x.value.trim();if(k==="chave"){r[k]=dig(r[k]);x.value=r[k]}if(k==="cnpjRem"||k==="cnpjDes"){r[k]=dig(r[k]);x.value=cnp(r[k])}
+        if(k==="valor"){r.pago=calcPago(r);tr.querySelector("[data-k=pago] input").value=r.pago;aven.textContent=money(futuras(r))}
+        refresh()};return x};
+    c(inp("numero"));c(inp("data"));c(inp("cnpjRem",cnp));c(inp("cnpjDes",cnp));c(inp("valor"));
+    aven.textContent=r.dups.length?money(futuras(r)):"—";tr.append(aven);
+    const tp=c(inp("pago"));tp.dataset.k="pago";
+    c(inp("chave"));
+    const td=c();td.className="f";td.textContent=r.file;td.title=r.file;
+    tb.append(tr);
+  });
+  refresh();
+}
+async function save(name,blob){
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();
+}
+const incl=()=>rows.filter(r=>!reason(r));
+$("dx").onclick=async()=>{
+  const L=incl();
+  const aoa=[["Número da Nota Fiscal","Data de Emissão","CNPJ do Remetente","CNPJ do Destinatário","Valor Total","Valor Pago","Chave da Nota Fiscal"],
+    ...L.map(r=>{const v=num(r.valor),p=num(r.pago);return[r.numero,r.data,cnp(r.cnpjRem),cnp(r.cnpjDes),isNaN(v)?r.valor:v,isNaN(p)?r.pago:p,r.chave||""]})];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);ws["!cols"]=[{wch:22},{wch:16},{wch:22},{wch:22},{wch:16},{wch:16},{wch:48}];
+  for(let i=2;i<=aoa.length;i++){["E","F"].forEach(c=>{const x=ws[c+i];if(x&&typeof x.v==="number")x.z="#,##0.00"});const k=ws["G"+i];if(k){k.t="s";k.v=String(k.v)}}
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Notas Fiscais");
+  await save("notas-fiscais.xlsx",new Blob([XLSX.write(wb,{bookType:"xlsx",type:"array"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+};
+$("dp").onclick=async()=>{
+  $("dp").disabled=true;$("st").textContent="Montando PDF unificado...";
+  try{
+    const out=await PDFLib.PDFDocument.create();
+    for(const r of incl()){
+      if(isPdf(r.f)){try{const src=await PDFLib.PDFDocument.load(await r.f.arrayBuffer(),{ignoreEncryption:true});(await out.copyPages(src,src.getPageIndices())).forEach(p=>out.addPage(p))}catch(e){}}
+      else if(r.img){const im=await out.embedJpg(await r.img.arrayBuffer());out.addPage([im.width,im.height]).drawImage(im,{x:0,y:0,width:im.width,height:im.height})}
+    }
+    await save("notas-fiscais-unificado.pdf",new Blob([await out.save()],{type:"application/pdf"}));
+    $("st").textContent="PDF gerado.";
+  }catch(e){$("st").textContent="Erro ao gerar o PDF: "+e.message}
+  refresh();
+};
+</script>
+</body>
+</html>
